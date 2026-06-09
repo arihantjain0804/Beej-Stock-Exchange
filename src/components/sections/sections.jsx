@@ -168,3 +168,85 @@ export function Footer() {
     </footer>
   );
 }
+
+import { useState } from 'react';
+import { MONTHS } from '../../data/tokens';
+
+export function SeasonCalendar() {
+  const [activeMonth, setActiveMonth] = useState(null);
+  const seasonData = {
+    kharif:   [6, 7, 8, 9, 10, 11],
+    rabi:     [11, 0, 1, 2, 3, 4],
+    zaid:     [3, 4, 5],
+    fundable: [5, 6, 7, 11, 0],
+  };
+
+  function getDotsForMonth(i) {
+    const dots = [];
+    if (seasonData.kharif.includes(i))   dots.push('kharif');
+    if (seasonData.rabi.includes(i))     dots.push('rabi');
+    if (seasonData.zaid.includes(i))     dots.push('zaid');
+    if (seasonData.fundable.includes(i)) dots.push('fundable');
+    return dots;
+  }
+
+  return (
+    <section id="season-calendar">
+      <div className="section-inner">
+        <div className="calendar-header reveal">
+          <p className="cal-eyebrow">Crop Season Calendar · 2025–26</p>
+          <h3 className="cal-title">When the fields wake, and when they rest.</h3>
+        </div>
+        <div className="season-strip reveal reveal-d1">
+          {MONTHS.map((m, i) => (
+            <div
+              key={m}
+              className={`month-cell ${activeMonth === i ? 'active' : ''}`}
+              onClick={() => setActiveMonth(i === activeMonth ? null : i)}
+            >
+              <div className="mc-name">{m}</div>
+              <div className="mc-dots">
+                {getDotsForMonth(i).map(type => <div key={type} className={`mc-dot ${type}`}></div>)}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="season-legend reveal reveal-d2">
+          {[['kharif','Kharif (Jun–Nov)'],['rabi','Rabi (Nov–Apr)'],['zaid','Zaid (Mar–Jun)'],['fundable','Fundable Now']].map(([cls, label]) => (
+            <div key={cls} className="legend-item">
+              <div className={`legend-dot ${cls}`}></div>
+              {label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function IntroOverlay() {
+  const { setEntered } = useAppContext();
+  return (
+    <div className="intro-overlay">
+      <div className="intro-box">
+        <div className="intro-seed-icon">
+          <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="40" cy="38" rx="14" ry="20" stroke="currentColor" strokeWidth="1.5" opacity="0.5"/>
+            <path d="M40 18 L40 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M40 12 Q48 8 52 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7"/>
+            <path d="M40 14 Q32 10 28 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7"/>
+            <path d="M40 58 L40 70" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
+            <path d="M40 64 Q32 68 30 74" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.3"/>
+            <path d="M40 66 Q48 70 50 74" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.3"/>
+            <circle cx="40" cy="6" r="2.5" fill="currentColor" opacity="0.9"/>
+          </svg>
+        </div>
+        <p className="intro-hindi">बीज स्टॉक एक्सचेंज</p>
+        <h1 className="intro-title">BEEJ</h1>
+        <p className="intro-desc">Where seeds become stocks,<br/>and harvests become returns.</p>
+        <button className="btn-enter" onClick={() => setEntered(true)}>ENTER EXCHANGE</button>
+        <p className="intro-privacy">All transactions secured by SEBI AgriToken Framework</p>
+      </div>
+    </div>
+  );
+}

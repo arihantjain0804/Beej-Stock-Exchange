@@ -1,111 +1,84 @@
+import './styles/tokens.css';
+
 import { AppProvider, useAppContext } from './context/AppContext';
-import Nav from './components/Nav/Nav';
-import Hero from './components/Hero/Hero';
-import Ticker from './components/Ticker/Ticker';
-import BeejIndex from './components/BeejIndex/BeejIndex';
+
+// Layout components
+import Nav       from './components/Nav/Nav';
+import Hero      from './components/Hero/Hero';
+import BeejIndex from './components/Beej-Index/Beej-Index';
 import CropCards from './components/CropCards/CropCards';
-import WalletModal from './components/modals/WalletModal/WalletModal';
-import CropDetailModal from './components/modals/CropDetailModal/CropDetailModal';
-import FarmerModal from './components/modals/FarmerModal/FarmerModal';
-import InvestorModal from './components/modals/InvestorModal/InvestorModal';
-import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
-import WatchlistDrawer from './components/drawers/WatchlistDrawer/WatchlistDrawer';
+
+// Section components
 import {
-  Toast,
+  IntroOverlay,
   ProblemSection,
   HowItWorks,
   TrustMetrics,
+  SeasonCalendar,
   ReturnSection,
   Footer,
-  SeasonCalendar,
-  IntroOverlay,
-} from './components/sections';
-import './styles/tokens.css';
+  Toast,
+} from './components/sections/sections.jsx';
+// Modals
+import WalletModal     from './components/modals/WalletModal/WalletModal';
+import CropDetailModal from './components/modals/CropDetailModal/CropDetailModal';
+import FarmerModal     from './components/modals/FarmerModal/FarmerModal';
+import InvestorModal   from './components/modals/InvestorModal/InvestorModal';
 
-function AppShell() {
+// Drawers
+import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
+import WatchlistDrawer from './components/drawers/WatchlistDrawer/WatchlistDrawer';
+
+// ─── Inner App (has access to context) ───────────────────────────────────────
+function AppInner() {
   const {
-    entered, setEntered,
-    tokens,
-    connected, walletAddr,
-    walletOpen, setWalletOpen,
-    portfolioOpen, setPortfolioOpen,
-    watchlistOpen, setWatchlistOpen,
-    watchlist, removeFromWatchlist,
-    cropDetail, setCropDetail,
-    farmerModal, setFarmerModal,
-    investorModal, setInvestorModal,
-    toast,
-    handleConnect,
-    handleBookmark,
-    handleInvest,
+    entered,
+    walletOpen,
+    cropDetail,
+    farmerModal,
+    investorModal,
   } = useAppContext();
 
   return (
     <>
-      {!entered && <IntroOverlay onEnter={() => setEntered(true)} />}
+      {!entered && <IntroOverlay />}
 
-      <Nav
-        connected={connected}
-        walletAddr={walletAddr}
-        watchlistCount={watchlist.length}
-        onWalletClick={() => setWalletOpen(true)}
-        onPortfolioClick={() => setPortfolioOpen(true)}
-        onWatchlistClick={() => setWatchlistOpen(true)}
-      />
+      <Nav />
 
-      <Ticker />
-      <Hero
-        tokens={tokens}
-        onInvestorClick={() => setInvestorModal(true)}
-        onFarmerClick={() => setFarmerModal(true)}
-      />
-      <BeejIndex />
-      <ProblemSection />
-      <HowItWorks />
-      <CropCards
-        watchlist={watchlist}
-        onBookmark={handleBookmark}
-        onViewDetails={setCropDetail}
-        onInvest={handleInvest}
-      />
-      <TrustMetrics />
-      <SeasonCalendar />
-      <ReturnSection
-        onInvestorClick={() => setInvestorModal(true)}
-        onFarmerClick={() => setFarmerModal(true)}
-      />
+      <main>
+        <Hero />
+        <ProblemSection />
+        <HowItWorks />
+        <CropCards />
+        <BeejIndex />
+        <TrustMetrics />
+        <SeasonCalendar />
+        <ReturnSection />
+      </main>
+
       <Footer />
 
-      {walletOpen && (
-        <WalletModal onClose={() => setWalletOpen(false)} onConnect={handleConnect} />
-      )}
-      {cropDetail && (
-        <CropDetailModal crop={cropDetail} onClose={() => setCropDetail(null)} onInvest={handleInvest} />
-      )}
-      {farmerModal && <FarmerModal onClose={() => setFarmerModal(false)} />}
-      {investorModal && <InvestorModal onClose={() => setInvestorModal(false)} />}
+      {/* Drawers */}
+      <PortfolioDrawer />
+      <WatchlistDrawer />
 
-      <PortfolioDrawer
-        open={portfolioOpen}
-        onClose={() => setPortfolioOpen(false)}
-        connected={connected}
-      />
-      <WatchlistDrawer
-        open={watchlistOpen}
-        onClose={() => setWatchlistOpen(false)}
-        watchlist={watchlist}
-        onRemove={removeFromWatchlist}
-      />
+      {/* Modals — only render when open */}
+      {walletOpen    && <WalletModal />}
+      {cropDetail    && <CropDetailModal />}
+      {farmerModal   && <FarmerModal />}
+      {investorModal && <InvestorModal />}
 
-      <Toast message={toast} show={toast.show} />
+      {/* Global toast notification */}
+      <Toast />
     </>
   );
 }
 
+// ─── Root App (provides context to everything) ────────────────────────────────
 export default function App() {
   return (
     <AppProvider>
-      <AppShell />
+      <AppInner />
     </AppProvider>
   );
 }
