@@ -311,11 +311,23 @@ export default function FarmerModal() {
                     { field: "agreeKyc", text: "I agree to complete the BSE KYC process within 5 days of approval, as required by SEBI's AgriToken framework." },
                     { field: "agreeData", text: "I consent to sharing my land and crop data with verified investors on the BSE platform for the purpose of this listing." },
                   ].map(({ field, text }) => (
-                    <label key={field} className="fom-checkbox-label">
-                      <input type="checkbox" checked={form[field]} onChange={e => set(field, e.target.checked)} />
-                      <span className="fom-checkbox-box">✓</span>
-                      {text}
-                    </label>
+                    <label 
+                        key={field} 
+                        className="fom-checkbox-label"
+                        onClick={() => set(field, !form[field])}
+                        style={{ cursor: 'pointer' }}
+                        >
+                        <input 
+                          type="checkbox" 
+                          checked={form[field]} 
+                          onChange={() => {}}
+                          style={{ display: 'none' }}
+                        />
+                        <span className="fom-checkbox-box">
+                          {form[field] ? "✓" : ""}
+                        </span>
+                        {text}
+                      </label>
                   ))}
                 </div>
               </div>
