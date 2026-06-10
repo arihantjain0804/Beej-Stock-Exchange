@@ -30,7 +30,7 @@ export default function CropCards() {
 
         <div className="crop-cards">
           {CROP_CARDS.map((c, i) => (
-            <div key={c.id} className={`crop-card reveal ${delays[i]}`}>
+            <div key={c.id} className={`crop-card reveal ${delays[i]}`} onClick={() => setCropDetail(c)}>
               <div className="card-glow"></div>
 
               <button

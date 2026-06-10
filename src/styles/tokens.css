@@ -883,3 +883,36 @@ footer { background:var(--soil); border-top:1px solid var(--glass-border-dim); p
   text-align: center; margin-top: 1rem;
   line-height: 1.6;
 }
+
+/* ============================================================
+   CROP DETAIL MODAL
+   ============================================================ */
+#crop-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.cem-tab-panel { display: none; }
+.cem-tab-panel.active { display: block; }
+
+.cem-token-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.cem-tm-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.8rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--glass-border-dim);
+  text-align: center;
+}
