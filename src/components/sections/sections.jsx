@@ -223,30 +223,3 @@ export function SeasonCalendar() {
     </section>
   );
 }
-
-export function IntroOverlay() {
-  const { setEntered } = useAppContext();
-  return (
-    <div className="intro-overlay">
-      <div className="intro-box">
-        <div className="intro-seed-icon">
-          <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <ellipse cx="40" cy="38" rx="14" ry="20" stroke="currentColor" strokeWidth="1.5" opacity="0.5"/>
-            <path d="M40 18 L40 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            <path d="M40 12 Q48 8 52 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7"/>
-            <path d="M40 14 Q32 10 28 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.7"/>
-            <path d="M40 58 L40 70" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.4"/>
-            <path d="M40 64 Q32 68 30 74" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.3"/>
-            <path d="M40 66 Q48 70 50 74" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.3"/>
-            <circle cx="40" cy="6" r="2.5" fill="currentColor" opacity="0.9"/>
-          </svg>
-        </div>
-        <p className="intro-hindi">बीज स्टॉक एक्सचेंज</p>
-        <h1 className="intro-title">BEEJ</h1>
-        <p className="intro-desc">Where seeds become stocks,<br/>and harvests become returns.</p>
-        <button className="btn-enter" onClick={() => setEntered(true)}>ENTER EXCHANGE</button>
-        <p className="intro-privacy">All transactions secured by SEBI AgriToken Framework</p>
-      </div>
-    </div>
-  );
-}

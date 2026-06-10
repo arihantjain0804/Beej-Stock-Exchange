@@ -10,7 +10,6 @@ import CropCards from './components/CropCards/CropCards';
 
 // Section components
 import {
-  IntroOverlay,
   ProblemSection,
   HowItWorks,
   TrustMetrics,
@@ -19,11 +18,13 @@ import {
   Footer,
   Toast,
 } from './components/sections/sections.jsx';
+
 // Modals
 import WalletModal     from './components/modals/WalletModal/WalletModal';
 import CropDetailModal from './components/modals/CropDetailModal/CropDetailModal';
 import FarmerModal     from './components/modals/FarmerModal/FarmerModal';
 import InvestorModal   from './components/modals/InvestorModal/InvestorModal';
+import IntroOverlay    from './components/modals/IntroOverlay/IntroOverlay';
 
 // Drawers
 import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
@@ -58,23 +59,20 @@ function AppInner() {
 
       <Footer />
 
-      {/* Drawers */}
       <PortfolioDrawer />
       <WatchlistDrawer />
 
-      {/* Modals — only render when open */}
       {walletOpen    && <WalletModal />}
       {cropDetail    && <CropDetailModal />}
       {farmerModal   && <FarmerModal />}
       {investorModal && <InvestorModal />}
 
-      {/* Global toast notification */}
       <Toast />
     </>
   );
 }
 
-// ─── Root App (provides context to everything) ────────────────────────────────
+// ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <AppProvider>

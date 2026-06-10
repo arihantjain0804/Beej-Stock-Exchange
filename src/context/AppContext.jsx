@@ -108,8 +108,6 @@ export function AppProvider({ children }) {
 }
 
 // ─── Custom Hook ──────────────────────────────────────────────────────────────
-// Use this in any component instead of prop drilling:
-// const { connected, handleInvest } = useAppContext();
 export function useAppContext() {
   const context = useContext(AppContext);
   if (!context) {
