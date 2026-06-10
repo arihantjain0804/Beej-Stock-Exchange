@@ -9,6 +9,7 @@ export default function Nav() {
     setWalletOpen,
     setPortfolioOpen,
     setWatchlistOpen,
+    setFarmerModal, 
   } = useAppContext();
 
   const scrollTo = (id) =>
@@ -27,7 +28,7 @@ export default function Nav() {
           <li><a onClick={() => scrollTo('projects')} style={{ cursor: 'pointer' }}>Markets</a></li>
           <li><a onClick={() => scrollTo('bse-index')} style={{ cursor: 'pointer' }}>BEEJ-50</a></li>
           <li><a onClick={() => scrollTo('how')} style={{ cursor: 'pointer' }}>How It Works</a></li>
-          <li><a onClick={() => scrollTo('problem')} style={{ cursor: 'pointer' }}>For Farmers</a></li>
+          <li><a onClick={() => {setFarmerModal(true); }} style={{ cursor: 'pointer' }}>For Farmers</a></li>
           <li><a onClick={() => scrollTo('trust')} style={{ cursor: 'pointer' }}>About</a></li>
           <li>
             <a onClick={() => scrollTo('projects')} style={{ cursor: 'pointer', position: 'relative' }}>
@@ -171,3 +172,7 @@ export default function Nav() {
     </>
   );
 }
+
+
+
+<li><a onClick={() => { console.log('farmer clicked'); setFarmerModal(true); }} style={{ cursor: 'pointer' }}>For Farmers</a></li>
