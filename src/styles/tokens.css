@@ -1847,9 +1847,13 @@ footer { background:var(--soil); border-top:1px solid var(--glass-border-dim); p
   color: var(--ember);
   letter-spacing: 0.06em;
   margin-top: 0.5rem;
-  display: none;
 }
 .iom-error-msg.show { display: block; }
+
+.iom-input.iom-input-error,
+.iom-select.iom-input-error {
+  border-color: var(--ember) !important;
+}
 
 /* Risk appetite pill selector */
 .iom-pill-group {
