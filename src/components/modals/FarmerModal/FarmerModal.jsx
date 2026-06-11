@@ -103,12 +103,18 @@ export default function FarmerModal() {
         {/* Step progress */}
         <div className="fom-progress">
           <div className="fom-steps-row">
-            {STEPS.map(s => (
-              <div key={s.num} className={`fom-step-node${step >= s.num ? " active" : ""}`}>
-                <div className="fom-step-circle">{step > s.num ? "✓" : s.num}</div>
-                <span className="fom-step-label">{s.label}</span>
-              </div>
-            ))}
+            {STEPS.map(s => {
+                let nodeClass = "fom-step-node";
+                if (step > s.num) nodeClass += " completed";
+                else if (step === s.num) nodeClass += " active";
+
+                return (
+                  <div key={s.num} className={nodeClass}>
+                    <div className="fom-step-circle">{step > s.num ? "✓" : s.num}</div>
+                    <span className="fom-step-label">{s.label}</span>
+                  </div>
+                );
+              })}
           </div>
         </div>
 
@@ -306,28 +312,23 @@ export default function FarmerModal() {
             <div className="fom-row fom-row-1">
               <div className="fom-field">
                 <div className="fom-checkbox-group">
-                  {[
+                 {[
                     { field: "agreeTerms", text: "I understand that token prices reflect my capital requirement, and investor returns are paid post-harvest via smart contract settlement." },
                     { field: "agreeKyc", text: "I agree to complete the BSE KYC process within 5 days of approval, as required by SEBI's AgriToken framework." },
                     { field: "agreeData", text: "I consent to sharing my land and crop data with verified investors on the BSE platform for the purpose of this listing." },
                   ].map(({ field, text }) => (
-                    <label 
-                        key={field} 
-                        className="fom-checkbox-label"
-                        onClick={() => set(field, !form[field])}
-                        style={{ cursor: 'pointer' }}
-                        >
-                        <input 
-                          type="checkbox" 
-                          checked={form[field]} 
-                          onChange={() => {}}
-                          style={{ display: 'none' }}
-                        />
-                        <span className="fom-checkbox-box">
-                          {form[field] ? "✓" : ""}
-                        </span>
-                        {text}
-                      </label>
+                    <div key={field} className="fom-checkbox-label" onClick={() => set(field, !form[field])} style={{ cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: '0.7rem', marginBottom: '0.55rem' }}>
+                      <div style={{
+                        width: '16px', height: '16px', flexShrink: 0, marginTop: '3px',
+                        border: `1px solid ${form[field] ? 'var(--field-light)' : 'var(--glass-border)'}`,
+                        background: form[field] ? 'rgba(58,92,42,0.25)' : 'rgba(255,255,255,0.02)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.6rem', color: 'var(--field-light)',
+                      }}>
+                        {form[field] ? "✓" : ""}
+                      </div>
+                      <span style={{ fontSize: '0.88rem', color: 'var(--straw-dim)', lineHeight: '1.45' }}>{text}</span>
+                    </div>
                   ))}
                 </div>
               </div>
