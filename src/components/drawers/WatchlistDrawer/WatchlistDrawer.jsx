@@ -1,48 +1,102 @@
 import { useAppContext } from '../../../context/AppContext';
 import { CROP_CARDS } from '../../../data/cropCards';
-import { TOKENS } from '../../../data/tokens';
 
 export default function WatchlistDrawer() {
-  const { watchlistOpen, setWatchlistOpen, watchlist, removeFromWatchlist } = useAppContext();
-  const onClose = () => setWatchlistOpen(false);
+  const {
+    watchlistOpen,
+    setWatchlistOpen,
+    watchlist,
+    handleBookmark,
+    setCropDetail,
+    setInvestorModal,
+  } = useAppContext();
 
-  const cropMap = Object.fromEntries(CROP_CARDS.map(c => [c.id, c]));
-  const tokenMap = Object.fromEntries(TOKENS.map(t => [t.id, t]));
+  const savedCrops = CROP_CARDS.filter(c => watchlist.includes(c.id));
 
   return (
     <>
-      <div className={`drawer-scrim ${watchlistOpen ? 'open' : ''}`} onClick={onClose}></div>
-      <div className={`watchlist-drawer ${watchlistOpen ? 'open' : ''}`}>
+      <div
+        className={`watchlist-scrim${watchlistOpen ? ' open' : ''}`}
+        onClick={() => setWatchlistOpen(false)}
+      />
+      <div className={`wl-drawer${watchlistOpen ? ' open' : ''}`} role="dialog" aria-label="Your Watchlist">
+        
+        {/* Header */}
         <div className="wl-header">
-          <div>
+          <div className="wl-title-wrap">
             <span className="wl-eyebrow">बीज · My Watchlist</span>
             <span className="wl-title">Crops on Watch</span>
           </div>
-          <button className="wl-close" onClick={onClose}>✕</button>
+          <button className="wl-close" onClick={() => setWatchlistOpen(false)}>✕</button>
         </div>
+
+        {/* Count line */}
+        <div className="wl-count-line">
+          {savedCrops.length} CROP{savedCrops.length !== 1 ? 'S' : ''} SAVED
+        </div>
+
+        {/* List */}
         <div className="wl-list">
-          {watchlist.length === 0 ? (
-            <div className="wl-empty-state">
+          {savedCrops.length === 0 ? (
+            <div className="wl-empty">
               <div className="wl-empty-icon">🌾</div>
-              <div className="wl-empty-text">No crops saved yet.<br />Tap the bookmark icon on any crop card.</div>
+              <p className="wl-empty-text">
+                No crops on your watchlist yet.<br />
+                Tap the bookmark on any crop card to save it here.
+              </p>
             </div>
-          ) : watchlist.map(id => {
-            const crop = cropMap[id];
-            const token = tokenMap[id];
-            if (!crop) return null;
-            return (
-              <div key={id} className="wl-item">
-                <span className="wl-crop-emoji">{token?.emoji || '🌾'}</span>
-                <div style={{ flex: 1 }}>
-                  <div className="wl-crop-name">{crop.name}</div>
-                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: '0.5rem', color: 'var(--straw-dim)', opacity: 0.45 }}>{crop.location}</div>
+          ) : (
+           savedCrops.map(c => (
+              <div key={c.id} className="wl-item" onClick={() => { setWatchlistOpen(false); setCropDetail(c); }}>
+                <div className={`wl-item-accent${c.risk === 'med' ? ' risk-med' : c.risk === 'high' ? ' risk-high' : ''}`} />
+                <div className="wl-item-body">
+                  <div className="wl-item-name">{c.name}</div>
+                  <div className="wl-item-meta">{c.variety}</div>
+                  <div className="wl-item-stats">
+                    <div className="wl-stat">
+                      <span className="wl-stat-label">Returns</span>
+                      <span className="wl-stat-value good">{c.return_.replace('/ Season', '').trim()}</span>
+                    </div>
+                    <div className="wl-stat">
+                      <span className="wl-stat-label">Funded</span>
+                      <span className="wl-stat-value">{c.fill}%</span>
+                    </div>
+                    <div className="wl-stat">
+                      <span className="wl-stat-label">Harvest</span>
+                      <span className="wl-stat-value">{c.harvestIn}</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="wl-crop-price">{crop.return_}</span>
-                <button className="wl-remove" onClick={() => removeFromWatchlist(id)}>✕</button>
+                <div className="wl-item-actions">
+                  <button
+                    className="wl-invest-btn"
+                    onClick={e => { e.stopPropagation(); setInvestorModal(true); }}
+                  >
+                    Invest →
+                  </button>
+                  <button
+                    className="wl-remove-btn"
+                    onClick={e => { e.stopPropagation(); handleBookmark(c); }}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
+
+        {/* Footer */}
+        {savedCrops.length > 0 && (
+          <div className="wl-footer">
+            <button
+              className="wl-invest-all"
+              onClick={() => { setWatchlistOpen(false); setInvestorModal(true); }}
+            >
+              Invest in Watchlist →
+            </button>
+          </div>
+        )}
       </div>
     </>
   );

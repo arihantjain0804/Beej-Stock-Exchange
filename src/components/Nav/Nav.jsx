@@ -53,7 +53,7 @@ export default function Nav() {
         <div className="nav-right">
           {/* Watchlist button */}
           <button
-            className="nav-watchlist"
+            className={`nav-watchlist${watchlist.length > 0 ? ' has-items' : ''}`}
             onClick={() => setWatchlistOpen(true)}
             aria-label="Open watchlist"
           >
@@ -61,7 +61,9 @@ export default function Nav() {
               <path className="nw-fill" d="M1 1h12v13.5l-6-3.5-6 3.5V1z" strokeLinejoin="round" stroke="currentColor" />
             </svg>
             Watchlist
-            <span className="wl-badge">{watchlist.length}</span>
+            <span 
+              className={`wl-badge${watchlist.length > 0 ? ' visible' : ''}`}>{watchlist.length}
+            </span>
           </button>
 
           {/* Icon tray — Alerts + Yield Calculator only */}
