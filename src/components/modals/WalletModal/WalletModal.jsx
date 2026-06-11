@@ -41,7 +41,7 @@ const WALLETS = [
 ];
 
 export default function WalletModal() {
-  const { walletOpen, setWalletOpen, setPortfolioOpen } = useAppContext();
+  const { walletOpen, setWalletOpen, setPortfolioOpen, handleConnect } = useAppContext();
 
   const [panel, setPanel] = useState("choose"); // "choose" | "connecting" | "connected"
   const [activeWallet, setActiveWallet] = useState(WALLETS[0]);
@@ -59,6 +59,7 @@ export default function WalletModal() {
     setTimeout(() => {
       setConnectedAddress("0x3f4a…8c2d");
       setPanel("connected");
+      handleConnect(activeWallet.name, "0x3f4a…8c2d");
     }, 2200);
   }
 

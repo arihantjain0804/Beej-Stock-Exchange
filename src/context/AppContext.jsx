@@ -49,6 +49,7 @@ export function AppProvider({ children }) {
     setWalletAddr(addr);
     setTimeout(() => {
       setWalletOpen(false);
+      setPortfolioOpen(true);
       showToast('Wallet Connected', `${method} · ${addr}`);
     }, 1200);
   }, [showToast]);
