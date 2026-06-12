@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 
 // ─── Nav Component (v24) ──────────────────────────────────────────────────────
@@ -14,6 +15,20 @@ export default function Nav() {
 
   const scrollTo = (id) =>
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+useEffect(() => {
+  const handleScroll = () => {
+    const navEl = document.querySelector('nav:first-of-type');
+    if (window.scrollY > 50) {
+      navEl?.classList.add('scrolled');
+    } else {
+      navEl?.classList.remove('scrolled');
+    }
+  };
+  handleScroll(); // run once on mount
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);
 
   return (
     <>
@@ -97,11 +112,10 @@ export default function Nav() {
           </div>
 
           {/* Wallet button */}
-          <button
-            className={`nav-wallet ${connected ? 'connected' : ''}`}
-            onClick={() => setWalletOpen(true)}
-          >
-            {connected ? walletAddr : 'Connect Wallet'}
+          <button  
+          className={`nav-wallet ${connected ? 'connected' : ''}`} 
+            onClick={() => setWalletOpen(true)}>
+            {connected ? `🔶 ${walletAddr}` : 'Connect Wallet'}
           </button>
 
           {/* Portfolio — only show when connected */}
@@ -118,7 +132,7 @@ export default function Nav() {
       </nav>
 
       {/* ── Mobile Bottom Nav ── */}
-      <nav id="mobile-bottom-nav" aria-label="Mobile navigation">
+      <div className="mobile-bottom-nav" aria-label="Mobile navigation">
         <div className="mbn-track">
           <button className="mbn-tab active" aria-label="Markets" onClick={() => scrollTo('projects')}>
             <div className="mbn-icon">
@@ -170,11 +184,7 @@ export default function Nav() {
             <span className="mbn-label">Portfolio</span>
           </button>
         </div>
-      </nav>
+      </div>
     </>
   );
 }
-
-
-
-<li><a onClick={() => { console.log('farmer clicked'); setFarmerModal(true); }} style={{ cursor: 'pointer' }}>For Farmers</a></li>

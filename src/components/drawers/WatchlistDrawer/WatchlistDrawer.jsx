@@ -74,12 +74,11 @@ export default function WatchlistDrawer() {
                   >
                     Invest →
                   </button>
-                  <button
-                    className="wl-remove-btn"
-                    onClick={e => { e.stopPropagation(); handleBookmark(c); }}
-                  >
-                    Remove
-                  </button>
+                  <button 
+                    className="wl-item-remove" 
+                    onClick={() => removeFromWatchlist(c.id)}
+                    >Remove
+                    </button>
                 </div>
               </div>
             ))

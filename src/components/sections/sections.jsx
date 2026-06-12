@@ -1,4 +1,11 @@
+import { useEffect, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
+
+const steps = [
+  { num: '01', icon: '🌱', title: 'A farmer lists a crop', body: 'A verified farmer submits their crop project — land size, crop variety, expected yield, funding need, and season timeline. A BSE agronomist validates the listing within 48 hours.', data: 'YIELD ESTIMATE · RISK SCORE · VERIFIED DATA' },
+  { num: '02', icon: '💰', title: 'Investors fund in tokens', body: 'The crop is tokenized into fractional units. Each token represents a proportional share of the eventual harvest proceeds. Invest from ₹500 upward — no intermediaries.', data: 'SMART CONTRACT · ASSET-BACKED · FRACTIONAL' },
+  { num: '03', icon: '🌾', title: 'Harvest distributes returns', body: 'After harvest, crop sale proceeds flow through a smart contract. Farmers keep their agreed share. Investor returns are distributed proportionally within 24 hours.', data: 'AUTO DISTRIBUTION · 24HR SETTLEMENT · ON-CHAIN' },
+];
 
 export function Toast() {
   const { toast } = useAppContext();
@@ -64,20 +71,64 @@ export function ProblemSection() {
 }
 
 export function HowItWorks() {
+  const sectionRef = useRef(null);
+
+  useEffect(() => {
+    const steps = sectionRef.current?.querySelectorAll('.how-step');
+    const pathFill = sectionRef.current?.querySelector('.hiw-path-fill');
+    const nodes = sectionRef.current?.querySelectorAll('.hiw-node');
+    const reveals = sectionRef.current?.querySelectorAll('.reveal');
+    reveals?.forEach(el => el.classList.add('visible'));
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // Animate steps in
+          steps?.forEach(s => s.classList.add('visible'));
+          // Draw the connector line
+          pathFill?.classList.add('animate');
+          // Pop the nodes with delay
+          nodes?.forEach((node, i) => {
+            setTimeout(() => node.classList.add('pop'), i * 500 + 100);
+          });
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.2 });
+
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="how" style={{ background: 'var(--soil-mid)', borderTop: '1px solid var(--glass-border-dim)' }}>
+    <section id="how" ref={sectionRef}>
       <div className="section-inner">
         <div style={{ textAlign: 'center' }} className="reveal">
           <p className="section-eyebrow">How Beej Works</p>
           <h2 className="section-title">Three acts. <em>One harvest.</em></h2>
         </div>
+
         <div className="how-steps">
-          {[
-            { num: '01', icon: '🌱', title: 'A farmer lists a crop', body: 'A verified farmer submits their crop project — land size, crop variety, expected yield, funding need, and season timeline. A BSE agronomist validates the listing within 48 hours.', data: 'YIELD ESTIMATE · RISK SCORE · VERIFIED DATA', delay: '' },
-            { num: '02', icon: '💰', title: 'Investors fund in tokens', body: 'The crop is tokenized into fractional units. Each token represents a proportional share of the eventual harvest proceeds. Invest from ₹500 upward — no intermediaries.', data: 'SMART CONTRACT · ASSET-BACKED · FRACTIONAL', delay: 'reveal-d1' },
-            { num: '03', icon: '🌾', title: 'Harvest distributes returns', body: 'After harvest, crop sale proceeds flow through a smart contract. Farmers keep their agreed share. Investor returns are distributed proportionally within 24 hours.', data: 'AUTO DISTRIBUTION · 24HR SETTLEMENT · ON-CHAIN', delay: 'reveal-d2' },
-          ].map(s => (
-            <div key={s.num} className={`how-step reveal ${s.delay}`}>
+          {/* Animated SVG connector */}
+          <svg className="hiw-connector" aria-hidden="true" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '7rem', overflow: 'visible', pointerEvents: 'none' }}>
+            <defs>
+              <linearGradient id="hiw-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="rgba(200,134,10,0.3)" />
+                <stop offset="50%" stopColor="#C8860A" />
+                <stop offset="100%" stopColor="rgba(200,134,10,0.3)" />
+              </linearGradient>
+            </defs>
+            <line className="hiw-path-bg" x1="16.67%" y1="56" x2="83.33%" y2="56" />
+            <line className="hiw-path-fill" x1="16.67%" y1="56" x2="83.33%" y2="56" />
+          </svg>
+
+          {/* Glowing nodes */}
+          <div className="hiw-node" style={{ left: 'calc(16.67% - 3px)', top: '3.5rem' }} />
+          <div className="hiw-node" style={{ left: 'calc(50% - 1px)', top: '3.5rem' }} />
+          <div className="hiw-node" style={{ left: 'calc(83.33% - 2px)', top: '3.5rem' }} />
+
+          {steps.map((s, i) => (
+            <div key={s.num} className="how-step">
               <div className="step-num">{s.num}</div>
               <span className="step-icon">{s.icon}</span>
               <h3 className="step-title">{s.title}</h3>
@@ -90,6 +141,7 @@ export function HowItWorks() {
     </section>
   );
 }
+
 
 export function TrustMetrics() {
   const stats = [

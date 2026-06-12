@@ -60,6 +60,9 @@ export default function Hero() {
             </div>
           ))}
         </div>
+
+       
+
       </div>
 
       <Ticker tokens={tokens} />
