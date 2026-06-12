@@ -9,6 +9,7 @@ export default function WatchlistDrawer() {
     handleBookmark,
     setCropDetail,
     setInvestorModal,
+    handleInvest,
   } = useAppContext();
 
   const savedCrops = CROP_CARDS.filter(c => watchlist.includes(c.id));
@@ -68,17 +69,24 @@ export default function WatchlistDrawer() {
                   </div>
                 </div>
                 <div className="wl-item-actions">
-                  <button
+                 <button
                     className="wl-invest-btn"
-                    onClick={e => { e.stopPropagation(); setInvestorModal(true); }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleInvest(c);
+                    }}
                   >
                     Invest →
                   </button>
-                  <button 
-                    className="wl-item-remove" 
-                    onClick={() => removeFromWatchlist(c.id)}
-                    >Remove
-                    </button>
+                  <button
+                    className="wl-item-remove"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBookmark(c);
+                    }}
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             ))

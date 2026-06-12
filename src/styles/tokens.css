@@ -929,8 +929,12 @@ section { padding:6rem 0; }
   border-top: 1px solid var(--glass-border-dim);
 }
 .bsi-ring-wrap {
+  width: 180px;
+  height: 180px;
   position: relative;
-  flex-shrink: 0;
+}
+.recharts-responsive-container {
+  min-width: 0;
 }
 #bsi-ring-canvas { display: block; }
 .bsi-ring-center {
@@ -1239,6 +1243,12 @@ section { padding:6rem 0; }
   top: 0; left: 0; bottom: 0;
   border-radius: 1px;
   transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+
+.bsi-hero-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
 }
 
 /* Responsive */

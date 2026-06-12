@@ -34,6 +34,7 @@ export function AppProvider({ children }) {
   const [cropDetail, setCropDetail] = useState(null);
   const [farmerModal, setFarmerModal] = useState(false);
   const [investorModal, setInvestorModal] = useState(false);
+  
 
   // Toast notification
   const [toast, setToast] = useState({ show: false, title: '', detail: '' });
