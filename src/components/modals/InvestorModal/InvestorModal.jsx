@@ -99,7 +99,7 @@ export default function InvestorModal() {
   };
 
   return (
-    <div className="modal-backdrop" style={{ position: 'fixed' }} onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="investor-modal-backdrop open" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="iom-shell">
 
         <button className="iom-close" onClick={onClose}>✕</button>
@@ -400,7 +400,7 @@ export default function InvestorModal() {
                 </p>
                 <div className="iom-success-ref">{investorId}</div>
                 <div className="iom-success-actions">
-                  <button className="iom-success-browse" onClick={onClose}>Browse Markets →</button>
+                  <button className="iom-success-browse" onClick={() => { onClose(); document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' }); }}>Browse Markets →</button>
                   <button className="iom-success-portfolio" onClick={() => { onClose(); setPortfolioOpen(true); }}>My Portfolio</button>
                 </div>
               </div>

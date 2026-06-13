@@ -35,6 +35,7 @@ export function AppProvider({ children }) {
   const [farmerModal, setFarmerModal] = useState(false);
   const [investorModal, setInvestorModal] = useState(false);
   const [tradeOpen, setTradeOpen] = useState(false);
+  const [priceAlertsOpen, setPriceAlertsOpen] = useState(false);
   
 
   // Toast notification
@@ -98,6 +99,7 @@ export function AppProvider({ children }) {
     farmerModal, setFarmerModal,
     investorModal, setInvestorModal,
     tradeOpen, setTradeOpen,
+    priceAlertsOpen, setPriceAlertsOpen,
     toast,
 
     // Handlers

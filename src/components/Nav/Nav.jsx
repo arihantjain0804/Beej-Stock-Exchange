@@ -11,7 +11,9 @@ export default function Nav() {
     setPortfolioOpen,
     setWatchlistOpen,
     setFarmerModal,
+    setInvestorModal,
     setTradeOpen,
+    setPriceAlertsOpen,
   } = useAppContext();
 
   const scrollTo = (id) =>
@@ -85,7 +87,7 @@ useEffect(() => {
           {/* Icon tray — Alerts + Yield Calculator only */}
           <div className="nav-icon-tray">
             {/* Price Alerts */}
-            <button className="nav-icon-btn" aria-label="Price Alerts" title="Price Alerts">
+            <button className="nav-icon-btn" aria-label="Price Alerts" title="Price Alerts" onClick={() => setPriceAlertsOpen(true)}>
               <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '15px', height: '15px' }}>
                 <path d="M10 2C10 2 5 4.5 5 10V14L3 16H17L15 14V10C15 4.5 10 2 10 2Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
                 <path d="M8 16C8 17.1 8.9 18 10 18C11.1 18 12 17.1 12 16" stroke="currentColor" strokeWidth="1.3" />

@@ -90,7 +90,7 @@ export default function WalletModal() {
   }
 
   return (
-    <div id="wallet-modal-backdrop" onClick={(e) => e.target === e.currentTarget && handleClose()}>
+    <div id="wallet-modal-backdrop" className="wallet-modal-backdrop open" onClick={(e) => e.target === e.currentTarget && handleClose()}>
       <div className="wm-shell">
 
         {/* ── PANEL 1: Choose Method ── */}
