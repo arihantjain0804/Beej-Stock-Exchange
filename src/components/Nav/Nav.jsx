@@ -14,6 +14,7 @@ export default function Nav() {
     setInvestorModal,
     setTradeOpen,
     setPriceAlertsOpen,
+    setYieldCalcOpen,
   } = useAppContext();
 
   const scrollTo = (id) =>
@@ -47,6 +48,7 @@ useEffect(() => {
           <li><a onClick={() => scrollTo('bse-index')} style={{ cursor: 'pointer' }}>BEEJ-50</a></li>
           <li><a onClick={() => scrollTo('how')} style={{ cursor: 'pointer' }}>How It Works</a></li>
           <li><a onClick={() => {setFarmerModal(true); }} style={{ cursor: 'pointer' }}>For Farmers</a></li>
+          <li><a onClick={() => {setInvestorModal(true); }} style={{ cursor: 'pointer' }}>For Investors</a></li>
           <li><a onClick={() => scrollTo('trust')} style={{ cursor: 'pointer' }}>About</a></li>
           <li>
             <a onClick={() => setTradeOpen(true)} style={{ cursor: 'pointer', position: 'relative' }}>
@@ -96,7 +98,7 @@ useEffect(() => {
             </button>
 
             {/* Yield Calculator */}
-            <button className="nav-icon-btn" aria-label="Yield Calculator" title="Yield Calculator">
+            <button className="nav-icon-btn" aria-label="Yield Calculator" title="Yield Calculator" onClick={() => setYieldCalcOpen(true)}>
               <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '15px', height: '15px' }}>
                 <rect x="3" y="2" width="14" height="16" rx="1" stroke="currentColor" strokeWidth="1.3" />
                 <path d="M6 5h8" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
@@ -106,7 +108,7 @@ useEffect(() => {
             </button>
 
             {/* Notification Bell */}
-            <button className="nav-bell" aria-label="Notifications">
+            <button className="nav-bell" aria-label="Notifications" title="Notifications">
               <svg className="nav-bell-icon" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 1C10 1 4 4 4 11V16L2 18H18L16 16V11C16 4 10 1 10 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
                 <path d="M8 18C8 19.1 8.9 20 10 20C11.1 20 12 19.1 12 18" stroke="currentColor" strokeWidth="1.2" />

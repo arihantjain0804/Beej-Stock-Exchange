@@ -93,7 +93,7 @@ export default function PortfolioDrawer() {
 
           {activeTab === 'positions' && (
             MOCK_POSITIONS.length === 0 ? (
-              <div style={{ padding: '3rem 1.8rem', textAlign: 'center', opacity: 0.4, fontStyle: 'italic', color: 'var(--straw-dim)' }}>
+              <div style={{ padding: '3rem 1.8rem', textAlign: 'center', opacity: 0.4, fontStyle: 'italic', color: 'var(--straw)' }}>
                 No positions yet. Start investing in crop tokens.
               </div>
             ) : (

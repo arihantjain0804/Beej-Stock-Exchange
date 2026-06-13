@@ -3264,7 +3264,7 @@ footer {
   flex: 1; padding: 0.75rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--straw-dim); opacity: 0.45;
+  color: var(--straw); opacity: 0.45;
   background: none; border: none; cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.25s;
@@ -6821,7 +6821,7 @@ footer {
 /* Disclaimer */
 .yc-disclaimer {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.5rem; color: var(--straw-dim);
+  font-size: 0.55rem; color: var(--straw);
   border-top: 1px solid var(--glass-border-dim);
   padding-top: 0.8rem; line-height: 1.6; opacity: 0.7;
 }

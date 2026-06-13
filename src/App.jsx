@@ -27,6 +27,7 @@ import InvestorModal   from './components/modals/InvestorModal/InvestorModal';
 import IntroOverlay    from './components/modals/IntroOverlay/IntroOverlay';
 import TradeModal      from './components/modals/TradeModal/TradeModal';
 import PriceAlertsModal from './components/modals/PriceAlertsModal/PriceAlertsModal';
+import YieldCalculatorModal from './components/modals/YieldCalculatorModal/YieldCalculatorModal';
 
 // Drawers
 import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
@@ -70,6 +71,7 @@ function AppInner() {
       {investorModal && <InvestorModal />}
       <TradeModal />
       <PriceAlertsModal />
+      <YieldCalculatorModal />
 
       <Toast />
     </>
