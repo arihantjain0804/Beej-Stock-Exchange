@@ -15,6 +15,7 @@ export default function Nav() {
     setTradeOpen,
     setPriceAlertsOpen,
     setYieldCalcOpen,
+    setNotifOpen, unreadCount
   } = useAppContext();
 
   const scrollTo = (id) =>
@@ -108,11 +109,14 @@ useEffect(() => {
             </button>
 
             {/* Notification Bell */}
-            <button className="nav-bell" aria-label="Notifications" title="Notifications">
+            <button className="nav-bell" aria-label="Notifications" title="Notifications" onClick={() => setNotifOpen(true)}>
               <svg className="nav-bell-icon" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 1C10 1 4 4 4 11V16L2 18H18L16 16V11C16 4 10 1 10 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
                 <path d="M8 18C8 19.1 8.9 20 10 20C11.1 20 12 19.1 12 18" stroke="currentColor" strokeWidth="1.2" />
               </svg>
+              {unreadCount > 0 && (
+                <span className="notif-badge">{unreadCount}</span>
+              )}
             </button>
           </div>
 

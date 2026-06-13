@@ -6,6 +6,17 @@ import { useReveal } from '../hooks/useReveal';
 // ─── Context Definition ───────────────────────────────────────────────────────
 const AppContext = createContext(null);
 
+const INITIAL_NOTIFS = [
+  { id: 1, type: 'harvest', icon: '🌾', unread: true, title: 'Punjab Wheat harvest settlement', desc: 'Smart contract settlement initiated · ₹8,40,000 distribution in progress', time: '2 min ago', tag: 'harvest', harvestPct: 94 },
+  { id: 2, type: 'alert', icon: '📈', unread: true, title: 'Price alert triggered: KRS-RCE', desc: 'Krishna Rice crossed ₹520 target · Current price ₹523.40', time: '18 min ago', tag: 'alert' },
+  { id: 3, type: 'trade', icon: '💱', unread: true, title: 'Order filled — VDB-SOY', desc: 'BUY 532 tokens @ ₹625.02 · Total ₹3,32,510.64', time: '1 hour ago', tag: 'trade' },
+  { id: 4, type: 'kyc', icon: '✅', unread: false, title: 'KYC verification complete', desc: 'Your identity documents have been verified · Full trading access enabled', time: '3 hours ago', tag: 'kyc' },
+  { id: 5, type: 'harvest', icon: '🌱', unread: false, title: 'Vidarbha Soy — season update', desc: 'Crop progress report: 67% funded · Agronomist confirms healthy growth', time: '5 hours ago', tag: 'harvest', harvestPct: 67 },
+  { id: 6, type: 'alert', icon: '🔔', unread: false, title: 'Watchlist: PNJ-WHT near target', desc: 'Punjab Wheat is within 3% of your ₹900 price alert', time: 'Yesterday', tag: 'alert' },
+  { id: 7, type: 'system', icon: '📋', unread: false, title: 'New crop listing: AP-TRM', desc: 'Andhra Pradesh Turmeric is now available · Rabi season · 19.2% projected return', time: 'Yesterday', tag: 'system' },
+  { id: 8, type: 'trade', icon: '💰', unread: false, title: 'Dividend distributed — MH-CTN', desc: 'Mid-season distribution of ₹4,200 credited to your wallet', time: '2 days ago', tag: 'trade' },
+];
+
 // ─── Provider Component ───────────────────────────────────────────────────────
 export function AppProvider({ children }) {
   // Intro
@@ -37,7 +48,9 @@ export function AppProvider({ children }) {
   const [tradeOpen, setTradeOpen] = useState(false);
   const [priceAlertsOpen, setPriceAlertsOpen] = useState(false);
   const [yieldCalcOpen, setYieldCalcOpen] = useState(false);
-  
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState(INITIAL_NOTIFS);
+  const unreadCount = notifs.filter(n => n.unread).length;
 
   // Toast notification
   const [toast, setToast] = useState({ show: false, title: '', detail: '' });
@@ -102,6 +115,8 @@ export function AppProvider({ children }) {
     tradeOpen, setTradeOpen,
     priceAlertsOpen, setPriceAlertsOpen,
     yieldCalcOpen, setYieldCalcOpen,
+    notifOpen, setNotifOpen,
+    notifs, setNotifs, unreadCount,
     toast,
 
     // Handlers
