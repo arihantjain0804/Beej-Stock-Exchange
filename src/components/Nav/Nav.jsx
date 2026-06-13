@@ -10,7 +10,8 @@ export default function Nav() {
     setWalletOpen,
     setPortfolioOpen,
     setWatchlistOpen,
-    setFarmerModal, 
+    setFarmerModal,
+    setTradeOpen,
   } = useAppContext();
 
   const scrollTo = (id) =>
@@ -46,7 +47,7 @@ useEffect(() => {
           <li><a onClick={() => {setFarmerModal(true); }} style={{ cursor: 'pointer' }}>For Farmers</a></li>
           <li><a onClick={() => scrollTo('trust')} style={{ cursor: 'pointer' }}>About</a></li>
           <li>
-            <a onClick={() => scrollTo('projects')} style={{ cursor: 'pointer', position: 'relative' }}>
+            <a onClick={() => setTradeOpen(true)} style={{ cursor: 'pointer', position: 'relative' }}>
               Trade{' '}
               <span style={{
                 display: 'inline-block',

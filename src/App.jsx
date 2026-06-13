@@ -25,6 +25,7 @@ import CropDetailModal from './components/modals/CropDetailModal/CropDetailModal
 import FarmerModal     from './components/modals/FarmerModal/FarmerModal';
 import InvestorModal   from './components/modals/InvestorModal/InvestorModal';
 import IntroOverlay    from './components/modals/IntroOverlay/IntroOverlay';
+import TradeModal      from './components/modals/TradeModal/TradeModal';
 
 // Drawers
 import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
@@ -66,6 +67,7 @@ function AppInner() {
       {cropDetail    && <CropDetailModal />}
       {farmerModal   && <FarmerModal />}
       {investorModal && <InvestorModal />}
+      <TradeModal />
 
       <Toast />
     </>
