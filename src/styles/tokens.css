@@ -713,11 +713,11 @@ nav.scrolled {
 section { padding:6rem 0; }
 .section-eyebrow {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.62rem;
-  letter-spacing: 0.35em;
+  font-size: 0.7rem;
+  letter-spacing: 0.65em;
   text-transform: uppercase;
   color: var(--harvest);
-  opacity: 0.7;
+  opacity: 1;
   margin-bottom: 1.2rem;
 }
 .section-title {
@@ -1356,9 +1356,10 @@ section { padding:6rem 0; }
 
 .problem-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5rem;
+  grid-template-columns: 1fr 56px 1fr;
+  gap: 0 3.5rem;
   align-items: start;
+  margin-top: 3rem;
 }
 
 .problem-intro {
@@ -1382,7 +1383,7 @@ section { padding:6rem 0; }
   position: absolute;
   top: -1px; left: 15%; right: 15%; height: 1px;
 }
-.problem-farmer::before { background: linear-gradient(to right, transparent, var(--field-light), transparent); }
+.problem-farmer::before { background: linear-gradient(to right, transparent, var(--field), transparent); }
 .problem-investor::before { background: linear-gradient(to right, transparent, var(--harvest), transparent); }
 
 .ps-tag {
@@ -1427,7 +1428,7 @@ section { padding:6rem 0; }
 .ps-points li {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
-  color: var(--straw-dim);
+  color: var(--straw);
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -1435,10 +1436,10 @@ section { padding:6rem 0; }
 }
 .ps-points li::before {
   content: '—';
-  opacity: 0.5;
+  opacity: 1;
 }
-.problem-farmer .ps-points li::before { color: var(--field-light); opacity: 0.8; }
-.problem-investor .ps-points li::before { color: var(--harvest); opacity: 0.8; }
+.problem-farmer .ps-points li::before { color: var(--field-light); opacity: 1; }
+.problem-investor .ps-points li::before { color: var(--harvest); opacity: 1; }
 
 
 /* ============================================================
@@ -1473,6 +1474,23 @@ section { padding:6rem 0; }
   background: radial-gradient(circle, rgba(200,134,10,0.18) 0%, transparent 70%);
   animation: orbPulse 4s ease-in-out infinite;
 }
+
+.seed-orb-divider-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  height: 100%;
+}
+.seed-orb-line-v {
+  flex: 1;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--glass-border));
+}
+.seed-orb-divider-vertical .seed-orb-line-v:last-child {
+  background: linear-gradient(to top, transparent, var(--glass-border));
+} 
 @keyframes orbPulse {
   0%,100% { transform: scale(1); opacity: 0.7; }
   50% { transform: scale(1.35); opacity: 1; }
@@ -2001,7 +2019,7 @@ section { padding:6rem 0; }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--straw-dim);
-  opacity: 0.5;
+  opacity: 0.8;
 }
 .month-bar {
   width: 100%;
@@ -2047,7 +2065,7 @@ section { padding:6rem 0; }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--straw-dim);
-  opacity: 0.6;
+  opacity: 0.8;
 }
 .legend-dot {
   width: 8px; height: 3px;
@@ -2277,7 +2295,7 @@ section { padding:6rem 0; }
   display: flex; align-items: center; gap: 0.4rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--straw-dim); opacity: 0.5;
+  color: var(--straw-dim); opacity: 1;
 }
 .tl-legend-swatch {
   width: 20px; height: 6px; border-radius: 2px;
@@ -2513,7 +2531,7 @@ footer {
   font-size: 0.55rem;
   letter-spacing: 0.3em;
   color: var(--harvest);
-  opacity: 0.6;
+  opacity: 0.85;
   display: block;
   margin-bottom: 1.2rem;
 }
@@ -2521,7 +2539,7 @@ footer {
   font-size: 0.9rem;
   font-style: italic;
   color: var(--straw-dim);
-  opacity: 0.5;
+  opacity: 0.85;
   line-height: 1.6;
   max-width: 200px;
 }
@@ -2531,7 +2549,7 @@ footer {
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--harvest);
-  opacity: 0.55;
+  opacity: 0.85;
   margin-bottom: 1.2rem;
 }
 .footer-col-links {
@@ -2546,7 +2564,7 @@ footer {
   letter-spacing: 0.08em;
   color: var(--straw-dim);
   text-decoration: none;
-  opacity: 0.4;
+  opacity: 0.7;
   transition: opacity 0.25s, color 0.25s;
 }
 .footer-col-links a:hover { opacity: 0.85; color: var(--sky); }
@@ -2559,15 +2577,15 @@ footer {
 }
 .footer-sebi-text {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.6rem;
   letter-spacing: 0.06em;
   color: var(--straw-dim);
-  opacity: 0.28;
+  opacity: 1;
   line-height: 1.7;
 }
 .footer-sebi-text strong {
   color: var(--harvest);
-  opacity: 0.5;
+  opacity: 0.9;
   font-weight: 500;
 }
 .footer-bottom {
@@ -2580,9 +2598,9 @@ footer {
 }
 .footer-copy-new {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
-  color: var(--straw-dim);
-  opacity: 0.2;
+  font-size: 0.65rem;
+  color: var(--straw);
+  opacity: 1;
   letter-spacing: 0.1em;
 }
 .footer-social {
@@ -2591,15 +2609,15 @@ footer {
 }
 .footer-social a {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem;
+  font-size: 0.6rem;
   letter-spacing: 0.12em;
-  color: var(--straw-dim);
+  color: var(--straw);
   text-decoration: none;
-  opacity: 0.25;
+  opacity: 1;
   text-transform: uppercase;
   transition: opacity 0.25s;
 }
-.footer-social a:hover { opacity: 0.6; }
+.footer-social a:hover { opacity: 0.7; }
 
 /* ============================================================
    RESPONSIVE — FULL MOBILE PASS
@@ -2663,7 +2681,7 @@ footer {
 
   /* Footer */
   .footer-top { grid-template-columns: 1fr; }
-  .footer-sebi { display: none; } /* too small to read anyway */
+  .footer-sebi { display: block; } /* too small to read anyway */
 
   /* season legend */
   .season-legend { gap: 1.2rem; }
@@ -5759,9 +5777,8 @@ footer {
   color: var(--ember);
   letter-spacing: 0.08em;
   margin-top: 0.25rem;
-  display: none;
+  display: block;
 }
-.fom-error-msg.show { display: block; }
 
 /* Responsive modal */
 @media (max-width: 600px) {
