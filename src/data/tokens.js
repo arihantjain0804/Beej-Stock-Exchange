@@ -30,14 +30,18 @@ export function seedPrices(tokens) {
 
 // ─── BEEJ-50 Index Constituents ───────────────────────────────────────────────
 export const BSI_CONSTITUENTS = [
-  { symbol: 'WHTPUN24',  name: 'Punjab Wheat',      region: 'Punjab',    weight: '18.5%', price: '₹45.20', change: '+2.1%', changeDir: 'up',   barW: 18.5 },
-  { symbol: 'RICETEL24', name: 'Krishna Rice',       region: 'Andhra',    weight: '16.2%', price: '₹52.10', change: '+1.4%', changeDir: 'up',   barW: 16.2 },
-  { symbol: 'COTMAH24',  name: 'Gujarat Cotton',     region: 'Gujarat',   weight: '14.8%', price: '₹67.80', change: '-0.8%', changeDir: 'down', barW: 14.8 },
-  { symbol: 'GRPRAJ24',  name: 'Rajasthan Mustard',  region: 'Rajasthan', weight: '12.1%', price: '₹41.30', change: '+0.5%', changeDir: 'up',   barW: 12.1 },
-  { symbol: 'TURGUJ24',  name: 'MP Gram',            region: 'MP',        weight: '10.4%', price: '₹35.90', change: '-1.2%', changeDir: 'down', barW: 10.4 },
-  { symbol: 'MZKAR24',   name: 'Nashik Onion',       region: 'Nashik',    weight: '9.8%',  price: '₹29.40', change: '+3.2%', changeDir: 'up',   barW: 9.8  },
-  { symbol: 'PEPKER24',  name: 'Kerala Coconut',     region: 'Kerala',    weight: '8.6%',  price: '₹83.50', change: '+1.8%', changeDir: 'up',   barW: 8.6  },
-  { symbol: 'SOYVID24',  name: 'Vidarbha Soy',       region: 'Vidarbha',  weight: '9.6%',  price: '₹38.60', change: '+0.3%', changeDir: 'up',   barW: 9.6  },
+  { symbol: 'PNJ-WHT', name: 'Punjab Wheat',     region: 'Ludhiana, Punjab',       sector: 'Cereals',     color: '#C8860A', weight: 18.4, basePrice: 847.50  },
+  { symbol: 'KRS-RCE', name: 'Krishna Rice',     region: 'Vijayawada, AP',         sector: 'Cereals',     color: '#E8C87A', weight: 14.6, basePrice: 512.75  },
+  { symbol: 'VDB-SOY', name: 'Vidarbha Soy',     region: 'Amravati, Maharashtra',  sector: 'Oilseeds',    color: '#6daf4a', weight: 11.2, basePrice: 623.00  },
+  { symbol: 'UP-SGC',  name: 'UP Sugarcane',     region: 'Meerut, Uttar Pradesh',  sector: 'Cash Crops',  color: '#a8d060', weight: 9.1,  basePrice: 185.50  },
+  { symbol: 'GUJ-GND', name: 'Gujarat Groundnut',region: 'Saurashtra, Gujarat',    sector: 'Oilseeds',    color: '#e07a2a', weight: 8.3,  basePrice: 1240.00 },
+  { symbol: 'MH-CTN',  name: 'Vidarbha Cotton',  region: 'Nagpur, Maharashtra',    sector: 'Cash Crops',  color: '#d4a030', weight: 7.5,  basePrice: 2150.00 },
+  { symbol: 'TN-BSM',  name: 'Tamil Basmati',    region: 'Thanjavur, Tamil Nadu',  sector: 'Cereals',     color: '#d0b848', weight: 7.0,  basePrice: 680.00  },
+  { symbol: 'MP-SOY',  name: 'MP Soybean',       region: 'Indore, Madhya Pradesh', sector: 'Oilseeds',    color: '#78b44a', weight: 6.8,  basePrice: 598.25  },
+  { symbol: 'RJ-CUM',  name: 'Rajasthan Cumin',  region: 'Jodhpur, Rajasthan',     sector: 'Spices',      color: '#b85020', weight: 5.6,  basePrice: 1875.00 },
+  { symbol: 'KAR-RGI', name: 'Karnataka Ragi',   region: 'Tumkur, Karnataka',      sector: 'Millets',     color: '#c87040', weight: 4.2,  basePrice: 320.50  },
+  { symbol: 'KER-CCO', name: 'Kerala Coconut',   region: 'Thrissur, Kerala',       sector: 'Horticulture',color: '#50a870', weight: 3.8,  basePrice: 480.00  },
+  { symbol: 'AP-TRM',  name: 'Andhra Turmeric',  region: 'Nizamabad, Telangana',   sector: 'Spices',      color: '#f0a000', weight: 3.5,  basePrice: 2340.00 },
 ];
 
 // ─── Season Calendar Months ───────────────────────────────────────────────────

@@ -3,8 +3,8 @@ import { useAppContext } from '../../context/AppContext';
 
 const steps = [
   { num: '01', icon: '🌱', title: 'A farmer lists a crop', body: 'A verified farmer submits their crop project — land size, crop variety, expected yield, funding need, and season timeline. A BSE agronomist validates the listing within 48 hours.', data: 'YIELD ESTIMATE · RISK SCORE · VERIFIED DATA' },
-  { num: '02', icon: '💰', title: 'Investors fund in tokens', body: 'The crop is tokenized into fractional units. Each token represents a proportional share of the eventual harvest proceeds. Invest from ₹500 upward — no intermediaries.', data: 'SMART CONTRACT · ASSET-BACKED · FRACTIONAL' },
-  { num: '03', icon: '🌾', title: 'Harvest distributes returns', body: 'After harvest, crop sale proceeds flow through a smart contract. Farmers keep their agreed share. Investor returns are distributed proportionally within 24 hours.', data: 'AUTO DISTRIBUTION · 24HR SETTLEMENT · ON-CHAIN' },
+  { num: '02', icon: '💰', title: 'Investors fund in tokens', body: 'The crop is tokenized into fractional units. Each token represents a proportional share of the eventual harvest proceeds. Investors browse, evaluate, and invest — from ₹500 upward — no intermediaries.', data: 'SMART CONTRACT · ASSET-BACKED · FRACTIONAL' },
+  { num: '03', icon: '🌾', title: 'Harvest distributes returns', body: 'After harvest, crop sale proceeds flow through a smart contract. Farmers keep their agreed share. Investor returns are distributed proportionally, automatically, within 24 hours of sale settlement.', data: 'AUTO DISTRIBUTION · 24HR SETTLEMENT · ON-CHAIN' },
 ];
 
 export function Toast() {
