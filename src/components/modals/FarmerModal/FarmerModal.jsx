@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAppContext } from "../../../context/AppContext";
+import './FarmerModal.css';
 
 const STEPS = [
   { num: 1, label: "Crop Details" },

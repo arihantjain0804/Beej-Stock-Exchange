@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BSI_CONSTITUENTS } from '../../data/tokens';
+import './Beej-Index.css';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

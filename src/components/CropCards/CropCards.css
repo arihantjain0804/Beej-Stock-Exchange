@@ -1,0 +1,255 @@
+/* Crop Cards */
+.crop-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5px;
+}
+
+.crop-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border-dim);
+  padding: 2rem;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.crop-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,134,10,0.06) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.crop-card:hover { border-color: var(--glass-border); transform: translateY(-3px); }
+.crop-card:hover::before { opacity: 1; }
+.crop-card:hover .card-glow { opacity: 1; }
+
+.card-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--harvest), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+/* ============================================================
+   WATCHLIST — Card bookmark button
+   ============================================================ */
+.card-bookmark {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  z-index: 3;
+  width: 25px; height: 25px;
+  background: rgba(14,11,5,0.7);
+  border: 1px solid var(--glass-border-dim);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  backdrop-filter: blur(6px);
+}
+.card-bookmark:hover { border-color: var(--harvest); background: var(--harvest-dim); }
+.card-bookmark svg { width: 13px; height: 13px; transition: all 0.25s; }
+.card-bookmark .bm-fill { fill: none; stroke: var(--straw-dim); stroke-width: 1.5; transition: all 0.25s; }
+.card-bookmark:hover .bm-fill,
+.card-bookmark.bookmarked .bm-fill { fill: var(--harvest); stroke: var(--harvest); }
+.card-bookmark.bookmarked { border-color: var(--harvest); background: var(--harvest-dim); }
+/* little pop on bookmark */
+@keyframes bm-pop { 0%{transform:scale(1)} 40%{transform:scale(1.45)} 70%{transform:scale(0.9)} 100%{transform:scale(1)} }
+.card-bookmark.popping { animation: bm-pop 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+
+/* ============================================================
+   CARD BADGES
+   ============================================================ */
+.card-badge-wrap {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+  flex-wrap: wrap;
+}
+.card-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.6rem;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.badge-filling {
+  color: var(--ember);
+  border-color: rgba(224,92,26,0.35);
+  background: rgba(224,92,26,0.06);
+  animation: badgePulse 2.5s ease-in-out infinite;
+}
+.badge-filling::before {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--ember);
+  box-shadow: 0 0 5px var(--ember);
+  animation: badgePulse 2.5s ease-in-out infinite;
+}
+@keyframes badgePulse {
+  0%,100% { opacity:1; }
+  50% { opacity:0.55; }
+}
+.badge-new {
+  color: var(--field-light);
+  border-color: rgba(74,117,53,0.35);
+  background: rgba(74,117,53,0.06);
+}
+
+.badge-verified { background:rgba(59,130,246,0.1); color:#60a5fa; border:1px solid rgba(59,130,246,0.2); }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+.card-crop-name {
+  font-size: 1.4rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--grain);
+  line-height: 1;
+}
+.card-crop-variety {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--straw-dim);
+  letter-spacing: 0.1em;
+  margin-top: 0.3rem;
+}
+.card-risk {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid;
+}
+.risk-low  { color: var(--field-light); border-color: rgba(74,117,53,0.3); }
+.risk-med  { color: var(--sky);         border-color: rgba(232,200,122,0.3); }
+.risk-high { color: var(--ember);       border-color: rgba(224,92,26,0.3); }
+
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  flex: 1;
+}
+.card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.cm-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  color: var(--straw-dim);
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.cm-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--straw);
+  letter-spacing: 0.05em;
+}
+.cm-value.highlight { color: var(--harvest); }
+
+/* Progress bar */
+.card-progress-wrap {
+  margin-bottom: 1.5rem;
+}
+.cp-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.cp-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--straw-dim);
+  opacity: 0.6;
+}
+.cp-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--harvest);
+}
+.cp-bar-bg {
+  height: 2px;
+  background: rgba(212,200,154,0.1);
+  position: relative;
+  overflow: hidden;
+}
+.cp-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--dusk), var(--harvest), var(--sky));
+  transition: width 1.5s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
+}
+.cp-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: -1px; top: -2px;
+  width: 5px; height: 6px;
+  background: var(--sky);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--sky);
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--glass-border-dim);
+}
+.card-farmer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.farmer-name {
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--grain);
+}
+.farmer-location {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--straw-dim);
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+}
+.card-invest-btn {
+  background: none;
+  border: 1px solid var(--glass-border);
+  color: var(--harvest);
+  padding: 0.5rem 1.1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.card-invest-btn:hover {
+  background: var(--harvest-dim);
+  border-color: var(--harvest);
+}

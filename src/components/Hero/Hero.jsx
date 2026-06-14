@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useParticles } from '../../hooks/useParticles';
 import Ticker from '../Ticker/Ticker';
+import './Hero.css';
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 // Full-viewport landing section with particle canvas, stats, and CTA buttons.

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppContext } from '../../../context/AppContext';
+import './InvestorModal.css';
 
 const STEPS = [
   { num: 1, label: 'Your Profile' },
@@ -65,12 +66,10 @@ export default function InvestorModal() {
 
   const handleNext = () => {
     setError('');
-    console.log('showErrors before:', showErrors, 'name:', name, 'email:', email, 'phone:', phone);
     if (step === 1) {
       if (!name || !email || !phone || !investorType || !risk) {
         setError('Please fill in all required fields before continuing.');
         setShowErrors(true);
-        console.log('set showErrors to true');
         return;
       }
     }

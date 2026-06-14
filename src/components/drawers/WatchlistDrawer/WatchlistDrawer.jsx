@@ -1,5 +1,6 @@
 import { useAppContext } from '../../../context/AppContext';
 import { CROP_CARDS } from '../../../data/cropCards';
+import './WatchlistDrawer.css';
 
 export default function WatchlistDrawer() {
   const {

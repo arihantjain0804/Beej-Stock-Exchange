@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppContext } from '../../../context/AppContext';
+import './PortfolioDrawer.css';
 
 const MOCK_POSITIONS = [
   {

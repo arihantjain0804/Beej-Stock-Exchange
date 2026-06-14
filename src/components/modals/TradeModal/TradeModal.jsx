@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { BSI_CONSTITUENTS } from '../../../data/tokens';
+import './TradeModal.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TIMEFRAMES = ['1D', '1W', '1M', 'ALL'];

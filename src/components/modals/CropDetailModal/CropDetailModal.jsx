@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAppContext } from "../../../context/AppContext";
+import './CropDetailModal.css';
 
 function genCropPriceHistory(basePrice = 488, targetPrice = 500) {
   const pts = 150;

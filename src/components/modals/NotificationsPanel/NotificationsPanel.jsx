@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '../../../context/AppContext';
+import './NotificationsPanel.css';
 
 const INITIAL_NOTIFS = [
   {
@@ -190,7 +191,7 @@ export default function NotificationsPanel() {
           <span className="notif-footer-label">
             {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
           </span>
-          <button className="notif-settings-btn">Notification Settings →</button>
+          <button className="notif-settings-btn" onClick={() => { setNotifOpen(false); setPriceAlertsOpen(true); }}>Notification Settings →</button>
         </div>
 
       </div>

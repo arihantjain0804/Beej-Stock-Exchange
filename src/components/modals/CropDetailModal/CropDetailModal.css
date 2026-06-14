@@ -1,0 +1,237 @@
+
+/* ============================================================
+   CROP DETAIL MODAL
+   ============================================================ */
+.crop-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 4500;
+  background: rgba(5,4,2,0.85);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.crop-modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+.cem-shell {
+  width: 100%;
+  max-width: 860px;
+  max-height: 92vh;
+  background: #0c0904;
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(28px) scale(0.98);
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
+}
+.crop-modal-backdrop.open .cem-shell { transform: translateY(0) scale(1); }
+
+.cem-shell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  z-index: 2;
+  background: linear-gradient(to right, transparent, var(--harvest), var(--sky), var(--harvest), transparent);
+}
+.cem-shell.risk-med::before {
+  background: linear-gradient(to right, transparent, var(--ember), #f0a000, var(--ember), transparent);
+}
+
+/* Header */
+.cem-header {
+  padding: 1.8rem 2.2rem 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+.cem-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--harvest);
+  opacity: 0.7;
+  margin-bottom: 0.4rem;
+}
+.cem-crop-name { font-size: 1.9rem; font-weight: 300; color: var(--grain); line-height: 1.1; letter-spacing: -0.01em; }
+.cem-crop-variety { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; color: var(--straw-dim); opacity: 0.55; margin-top: 0.3rem; }
+.cem-header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; flex-shrink: 0; }
+.cem-risk-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.52rem; letter-spacing: 0.2em; padding: 0.3rem 0.7rem; text-transform: uppercase; }
+.cem-risk-low { border: 1px solid rgba(74,117,53,0.5); color: #6daf4a; background: rgba(74,117,53,0.1); }
+.cem-risk-med { border: 1px solid rgba(224,92,26,0.4); color: var(--ember); background: rgba(224,92,26,0.08); }
+.cem-close { background: none; border: 1px solid var(--glass-border-dim); color: var(--straw-dim); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+.cem-close:hover { border-color: var(--harvest); color: var(--sky); }
+/* Tabs */
+.cem-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--glass-border-dim); padding: 0 2.2rem; margin-top: 1.4rem; flex-shrink: 0; }
+.cem-tab {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--straw-dim); opacity: 0.4; padding: 0.9rem 1.2rem 0.85rem; cursor: pointer;
+  border: none; border-bottom: 2px solid transparent; background: none; transition: all 0.25s; position: relative; bottom: -1px;
+}
+.cem-tab:hover { opacity: 0.7; }
+.cem-tab.active { opacity: 1; color: var(--sky); border-bottom-color: var(--harvest); }
+
+/* Body */
+.cem-body { overflow-y: auto; padding: 1.8rem 2.2rem; flex: 1; min-height: 0; }
+.cem-body::-webkit-scrollbar { width: 3px; }
+.cem-body::-webkit-scrollbar-thumb { background: var(--glass-border); }
+.cem-tab-panel { display: none; }
+.cem-tab-panel.active { display: block; animation: cemFadeIn 0.3s ease; }
+@keyframes cemFadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* Stats grid */
+.cem-stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-bottom: 1.6rem; }
+.cem-stat {
+  background: rgba(255,255,255,0.025); border: 1px solid var(--glass-border-dim); padding: 0.9rem 1rem; position: relative; overflow: hidden;
+}
+.cem-stat::before { content:''; position:absolute; top:0;left:0;right:0; height:1px; background:linear-gradient(to right,transparent,var(--glass-border),transparent); }
+.cem-stat-val { font-size: 1.3rem; font-weight: 300; color: var(--grain); display: block; line-height: 1.2; }
+.cem-stat-val.highlight { color: var(--sky); }
+.cem-stat-key { font-family:'JetBrains Mono',monospace; font-size:0.5rem; letter-spacing:0.15em; color:var(--straw-dim); text-transform:uppercase; opacity:0.45; display:block; margin-top:0.3rem; }
+
+/* Funding bar */
+.cem-funding-block { margin-bottom: 1.6rem; }
+.cem-funding-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.55rem; }
+.cem-funding-label { font-family:'JetBrains Mono',monospace; font-size:0.55rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--straw-dim); opacity:0.5; }
+.cem-funding-pct { font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:var(--sky); }
+.cem-funding-bar-bg { height:4px; background:rgba(212,200,154,0.08); position:relative; overflow:hidden; }
+.cem-funding-bar-fill { height:100%; background:linear-gradient(to right,var(--dusk),var(--harvest),var(--sky)); transition:width 1.4s cubic-bezier(0.16,1,0.3,1); position:relative; }
+.cem-funding-bar-fill::after { content:''; position:absolute; right:-1px; top:-4px; width:8px; height:12px; background:var(--sky); border-radius:50%; box-shadow:0 0 10px var(--sky); }
+.cem-funding-amounts { display:flex; justify-content:space-between; margin-top:0.5rem; font-family:'JetBrains Mono',monospace; font-size:0.52rem; color:rgba(212,200,154,0.25); }
+
+/* Farmer strip */
+.cem-farmer-strip { display:flex; align-items:center; gap:1rem; padding:1rem 1.2rem; background:rgba(255,255,255,0.02); border:1px solid var(--glass-border-dim); }
+.cem-farmer-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,rgba(200,134,10,0.3),rgba(58,92,42,0.3)); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.cem-farmer-name { font-size:0.95rem; color:var(--grain); display:block; }
+.cem-farmer-loc { font-family:'JetBrains Mono',monospace; font-size:0.52rem; letter-spacing:0.1em; color:var(--straw-dim); opacity:0.5; display:block; margin-top:0.15rem; }
+.cem-farmer-badge { font-family:'JetBrains Mono',monospace; font-size:0.48rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--field-light); border:1px solid rgba(58,92,42,0.4); padding:0.25rem 0.55rem; background:rgba(58,92,42,0.1); }
+
+/* Agronomist */
+.cem-agro-section { margin-bottom: 1.6rem; }
+.cem-agro-head { display:flex; align-items:center; gap:0.7rem; margin-bottom:1rem; padding-bottom:0.7rem; border-bottom:1px solid var(--glass-border-dim); }
+.cem-agro-icon { width:28px; height:28px; border:1px solid var(--glass-border); display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0; }
+.cem-agro-title { font-size:0.95rem; color:var(--grain); font-weight:400; }
+.cem-agro-sub { font-family:'JetBrains Mono',monospace; font-size:0.5rem; letter-spacing:0.1em; color:var(--straw-dim); opacity:0.4; margin-top:0.15rem; }
+.cem-agro-note { background:rgba(58,92,42,0.07); border-left:2px solid rgba(74,117,53,0.5); padding:1rem 1.2rem; font-size:0.92rem; font-style:italic; color:var(--straw-dim); line-height:1.75; margin-bottom:1rem; }
+.cem-agro-note strong { color:var(--grain); font-style:normal; font-weight:400; }
+.cem-agro-checklist { display:flex; flex-direction:column; gap:0.55rem; }
+.cem-agro-check { display:flex; align-items:center; gap:0.75rem; font-family:'JetBrains Mono',monospace; font-size:0.6rem; letter-spacing:0.06em; color:var(--straw-dim); opacity:0.7; }
+.cem-agro-check-dot { width:6px; height:6px; border-radius:50%; background:var(--field-light); flex-shrink:0; box-shadow:0 0 6px rgba(74,117,53,0.5); }
+.cem-agro-check-dot.warn { background:var(--ember); box-shadow:0 0 6px rgba(224,92,26,0.4); }
+
+/* Weather */
+.cem-weather-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.6rem; }
+.cem-weather-card { background:rgba(255,255,255,0.025); border:1px solid var(--glass-border-dim); padding:1rem 1.1rem; }
+.cem-wc-icon { font-size:1.3rem; margin-bottom:0.5rem; display:block; }
+.cem-wc-label { font-family:'JetBrains Mono',monospace; font-size:0.52rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--straw-dim); opacity:0.45; display:block; margin-bottom:0.3rem; }
+.cem-wc-value { font-size:1rem; color:var(--grain); display:block; }
+.cem-wc-risk-bar { margin-top:0.6rem; height:2px; background:rgba(212,200,154,0.08); }
+.cem-wc-risk-fill { height:100%; border-radius:1px; }
+.risk-fill-low  { background:linear-gradient(to right,#3a5c2a,#6daf4a); }
+.risk-fill-med  { background:linear-gradient(to right,#a05a10,var(--ember)); }
+.risk-fill-high { background:linear-gradient(to right,var(--ember),#d03010); }
+.cem-risk-summary { background:rgba(200,134,10,0.04); border:1px solid var(--glass-border-dim); padding:1rem 1.2rem; margin-bottom:1rem; }
+.cem-risk-sum-label { font-family:'JetBrains Mono',monospace; font-size:0.52rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--harvest); opacity:0.7; display:block; margin-bottom:0.5rem; }
+.cem-risk-sum-text { font-size:0.9rem; font-style:italic; color:var(--straw-dim); line-height:1.7; }
+
+/* Chart */
+.cem-chart-wrap { position:relative; margin-bottom:1.6rem; }
+.cem-chart-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; }
+.cem-chart-title { font-family:'JetBrains Mono',monospace; font-size:0.55rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--straw-dim); opacity:0.5; }
+.cem-chart-price { font-size:1.35rem; font-weight:300; color:var(--sky); transition: color 0.15s; }
+.cem-chart-change { font-family:'JetBrains Mono',monospace; font-size:0.58rem; color:#6daf4a; margin-left:0.5rem; transition: color 0.15s; }
+.cem-chart-change.negative { color: var(--ember); }
+.cem-chart-canvas-wrap { position:relative; height:160px; border-bottom:1px solid var(--glass-border-dim); border-left:1px solid var(--glass-border-dim); cursor:crosshair; }
+.cem-chart-canvas { width:100%; height:100%; display:block; }
+.cem-chart-x-labels { display:flex; justify-content:space-between; margin-top:0.5rem; font-family:'JetBrains Mono',monospace; font-size:0.52rem; color:rgba(212,200,154,0.38); letter-spacing:0.04em; }
+.cem-chart-x-labels span.active { color: rgba(232,200,122,0.85); }
+
+/* Hover date pill top-right of header */
+.cem-chart-hover-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: var(--sky);
+  background: rgba(232,200,122,0.08);
+  border: 1px solid rgba(232,200,122,0.2);
+  padding: 0.25rem 0.6rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  align-self: center;
+}
+.cem-chart-hover-date.visible { opacity: 1; }
+
+/* Crosshair overlay */
+.cem-crosshair {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.cem-crosshair.visible { opacity: 1; }
+.cem-crosshair-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(232,200,122,0.35);
+  left: 0;
+}
+.cem-crosshair-line::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(232,200,122,0.5) 20%, rgba(232,200,122,0.5) 80%, transparent);
+}
+.cem-crosshair-dot {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--sky);
+  border: 2px solid var(--soil);
+  box-shadow: 0 0 10px rgba(232,200,122,0.7);
+  transform: translate(-50%, -50%);
+  transition: top 0.05s, left 0.05s;
+}
+.cem-crosshair-label {
+  position: absolute;
+  transform: translateX(-50%);
+  bottom: calc(100% + 6px);
+  background: #0e0b05;
+  border: 1px solid var(--glass-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--sky);
+  padding: 0.3rem 0.6rem;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.cem-token-meta { display:grid; grid-template-columns:repeat(4,1fr); gap:0.5rem; margin-top:1.2rem; }
+.cem-tm-item { text-align:center; padding:0.6rem; background:rgba(255,255,255,0.02); border:1px solid var(--glass-border-dim); }
+.cem-tm-val { font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:var(--grain); display:block; }
+.cem-tm-key { font-family:'JetBrains Mono',monospace; font-size:0.48rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--straw-dim); opacity:0.65; display:block; margin-top:0.2rem; }
+
+/* Footer */
+.cem-footer { padding:1.1rem 2.2rem 1.4rem; border-top:1px solid var(--glass-border-dim); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:1rem; }
+.cem-footer-left { font-family:'JetBrains Mono',monospace; font-size:0.5rem; color:rgba(212,200,154,0.2); letter-spacing:0.1em; display:flex; align-items:center; gap:0.4rem; }
+.cem-invest-btn { background:linear-gradient(135deg,var(--harvest),var(--ember)); border:none; color:var(--soil); padding:0.75rem 2.2rem; font-family:'JetBrains Mono',monospace; font-size:0.64rem; font-weight:500; letter-spacing:0.22em; text-transform:uppercase; cursor:pointer; transition:all 0.35s; position:relative; overflow:hidden; }
+.cem-invest-btn::before { content:''; position:absolute; inset:0; background:rgba(255,255,255,0.12); transform:translateX(-100%); transition:transform 0.35s; }
+.cem-invest-btn:hover::before { transform:translateX(0); }
+.cem-invest-btn:hover { box-shadow:0 6px 28px rgba(200,134,10,0.45); transform:translateY(-1px); }
+.cem-watchlist-btn { background:none; border:1px solid var(--glass-border); color:var(--straw-dim); padding:0.75rem 1.4rem; font-family:'JetBrains Mono',monospace; font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; transition:all 0.25s; }
+.cem-watchlist-btn:hover { border-color:var(--harvest); color:var(--sky); }
+.cem-watchlist-btn.in-watchlist { border-color:var(--harvest); color:var(--harvest); background:var(--harvest-dim); }

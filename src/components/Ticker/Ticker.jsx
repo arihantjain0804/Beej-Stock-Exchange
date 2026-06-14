@@ -2,6 +2,8 @@
 // Scrolling live price bar shown at the bottom of the Hero section.
 // Receives the tokens array from AppContext via the Hero component.
 
+import './Ticker.css';
+
 export default function Ticker({ tokens }) {
   const doubled = [...tokens, ...tokens];
 

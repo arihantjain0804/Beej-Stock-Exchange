@@ -1,4 +1,6 @@
-import './styles/tokens.css';
+import './styles/base.css';
+import './styles/animations.css';
+import './styles/HandCursor.css';
 
 import { AppProvider, useAppContext } from './context/AppContext';
 

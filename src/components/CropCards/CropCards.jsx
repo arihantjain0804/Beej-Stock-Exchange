@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CROP_CARDS } from '../../data/cropCards';
 import { useAppContext } from '../../context/AppContext';
+import './CropCards.css';
 
 export default function CropCards() {
   const { watchlist, handleBookmark, setCropDetail } = useAppContext();
@@ -25,7 +26,7 @@ export default function CropCards() {
             <p className="section-eyebrow">Active This Season</p>
             <h2 className="section-title">Live <em>Crop Listings</em></h2>
           </div>
-          <button className="projects-view-all">View All Projects →</button>
+          <button className="projects-view-all" onClick={() => document.getElementById('bse-index')?.scrollIntoView({ behavior: 'smooth' })}>View All Projects →</button>
         </div>
 
         <div className="crop-cards">

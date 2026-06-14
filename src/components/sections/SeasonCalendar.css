@@ -1,0 +1,446 @@
+/* ============================================================
+   SEASON CALENDAR STRIP
+   ============================================================ */
+.season-calendar {
+  padding: 4rem 0;
+  border-top: 1px solid var(--glass-border-dim);
+  border-bottom: 1px solid var(--glass-border-dim);
+  background: linear-gradient(180deg, transparent 0%, rgba(14,11,5,0.4) 50%, transparent 100%);
+  overflow: hidden;
+}
+.calendar-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+.cal-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--harvest);
+  opacity: 0.6;
+  margin-bottom: 0.6rem;
+}
+.cal-title {
+  font-size: 1.6rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--grain);
+}
+.season-strip {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+  margin-bottom: 1rem;
+}
+.season-strip::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--glass-border-dim);
+  pointer-events: none;
+  z-index: 0;
+}
+.month-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+  z-index: 1;
+}
+.month-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--straw-dim);
+  opacity: 0.8;
+}
+.month-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--glass-border-dim);
+  position: relative;
+  overflow: hidden;
+}
+.month-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 0;
+  transition: width 1.4s cubic-bezier(0.16,1,0.3,1);
+}
+.month-bar-fill.kharif { background: linear-gradient(to right, var(--field), var(--field-light)); }
+.month-bar-fill.rabi   { background: linear-gradient(to right, var(--sky), var(--grain)); opacity:0.7; }
+.month-bar-fill.zaid   { background: linear-gradient(to right, var(--ember), var(--harvest)); opacity:0.7; }
+.month-bar-fill.now    { box-shadow: 0 0 8px var(--harvest); }
+.month-marker {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--straw-dim);
+  opacity: 0.2;
+}
+.month-marker.active {
+  background: var(--harvest);
+  opacity: 1;
+  box-shadow: 0 0 6px var(--harvest);
+}
+.season-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  margin-top: 1.5rem;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--straw-dim);
+  opacity: 0.8;
+}
+.legend-dot {
+  width: 8px; height: 3px;
+  border-radius: 2px;
+}
+.legend-dot.kharif { background: var(--field-light); }
+.legend-dot.rabi   { background: var(--sky); opacity: 0.7; }
+.legend-dot.zaid   { background: var(--ember); opacity: 0.7; }
+
+/* ============================================================
+   SEASON CALENDAR — Fundable crop highlights
+   ============================================================ */
+.month-col {
+  cursor: default;
+  transition: opacity 0.2s;
+}
+.month-col.has-crop { cursor: pointer; }
+.month-col:not(.has-crop):hover { opacity: 0.7; }
+
+/* Glowing ring on fundable months */
+.month-bar.fundable {
+  box-shadow: 0 0 0 1px rgba(200,134,10,0.35), 0 0 12px rgba(200,134,10,0.15);
+  background: rgba(200,134,10,0.06);
+}
+.month-bar.fundable-open {
+  box-shadow: 0 0 0 1.5px var(--harvest), 0 0 16px rgba(200,134,10,0.3);
+  background: rgba(200,134,10,0.08);
+}
+
+/* "OPEN" badge above fundable months */
+.month-open-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.42rem;
+  letter-spacing: 0.15em;
+  color: var(--harvest);
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.3s;
+  white-space: nowrap;
+  line-height: 1;
+}
+.month-col.has-crop .month-open-badge { opacity: 1; transform: translateY(0); }
+
+/* Crop pill tags below the bar */
+.month-crops {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  min-height: 0;
+  margin-top: 2px;
+}
+.crop-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(200,134,10,0.1);
+  border: 1px solid rgba(200,134,10,0.25);
+  border-radius: 2px;
+  padding: 1px 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.42rem;
+  letter-spacing: 0.06em;
+  color: var(--sky);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: pill-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.crop-pill:hover { background: rgba(200,134,10,0.2); border-color: var(--harvest); color: var(--grain); }
+.crop-pill.open   { background: rgba(200,134,10,0.14); border-color: rgba(200,134,10,0.5); color: var(--harvest); }
+.crop-pill.soon   { opacity: 0.6; }
+@keyframes pill-in { from { opacity:0; transform:scale(0.7); } to { opacity:1; transform:scale(1); } }
+
+/* Pulsing dot on pill */
+.pill-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--harvest);
+  flex-shrink: 0;
+}
+.crop-pill.open .pill-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.6); }
+}
+.crop-pill.soon .pill-dot { background: var(--straw-dim); animation: none; }
+
+/* Tooltip */
+.cal-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(10,8,3,0.97);
+  border: 1px solid var(--glass-border);
+  padding: 0.7rem 0.9rem;
+  width: 170px;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.cal-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--glass-border);
+}
+.month-col.has-crop:hover .cal-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.tt-month {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 0.2em;
+  color: var(--harvest); text-transform: uppercase;
+  margin-bottom: 0.45rem; opacity: 0.7;
+}
+.tt-crop {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+.tt-crop:last-child { margin-bottom: 0; }
+.tt-crop-name {
+  font-size: 0.75rem; font-style: italic; color: var(--grain); flex: 1;
+}
+.tt-crop-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.48rem; letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tt-crop-status.open { color: var(--harvest); }
+.tt-crop-status.soon { color: var(--straw-dim); opacity: 0.5; }
+.tt-divider { height: 1px; background: var(--glass-border-dim); margin: 0.4rem 0; }
+
+/* ============================================================
+   SEASON CALENDAR — Funding window spans + callout
+   ============================================================ */
+
+/* Crop timeline rows — spans under the month strip */
+.funding-timeline {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+  margin-top: 0.3rem;
+  margin-bottom: 0.8rem;
+}
+.funding-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+  height: 22px;
+  align-items: center;
+  position: relative;
+}
+.funding-row-label {
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem; letter-spacing: 0.08em;
+  color: var(--straw-dim); opacity: 0.4;
+  pointer-events: none;
+  z-index: 1;
+  white-space: nowrap;
+  /* hidden — shown only on larger screens via the span label */
+}
+.funding-cell {
+  height: 14px; border-radius: 2px;
+  background: transparent;
+  transition: all 0.3s;
+  position: relative;
+}
+.funding-cell.fc-open {
+  background: linear-gradient(135deg, rgba(200,134,10,0.5), rgba(224,92,26,0.35));
+  box-shadow: 0 0 8px rgba(200,134,10,0.25);
+  cursor: pointer;
+}
+.funding-cell.fc-open:hover {
+  background: linear-gradient(135deg, rgba(200,134,10,0.75), rgba(224,92,26,0.55));
+  box-shadow: 0 0 14px rgba(200,134,10,0.4);
+}
+.funding-cell.fc-soon {
+  background: rgba(212,200,154,0.08);
+  border: 1px dashed rgba(212,200,154,0.15);
+  cursor: pointer;
+}
+.funding-cell.fc-soon:hover { background: rgba(212,200,154,0.14); }
+
+/* Span connector — merges adjacent cells visually */
+.funding-cell.fc-open.span-start { border-radius: 3px 1px 1px 3px; }
+.funding-cell.fc-open.span-mid   { border-radius: 1px; }
+.funding-cell.fc-open.span-end   { border-radius: 1px 3px 3px 1px; }
+.funding-cell.fc-soon.span-start { border-radius: 3px 1px 1px 3px; }
+.funding-cell.fc-soon.span-mid   { border-radius: 1px; }
+.funding-cell.fc-soon.span-end   { border-radius: 1px 3px 3px 1px; }
+
+/* Span label — crop name that appears on the first cell of a span */
+.funding-cell .span-label {
+  position: absolute;
+  left: 6px; top: 50%;
+  transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.48rem; letter-spacing: 0.1em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+.fc-open .span-label { color: var(--harvest); }
+.fc-soon .span-label { color: var(--straw-dim); opacity: 0.5; }
+
+/* Timeline legend row */
+.timeline-legend {
+  display: flex; gap: 1.5rem; align-items: center;
+  margin-bottom: 0.8rem;
+  padding-left: 0.2rem;
+}
+.tl-legend-item {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--straw-dim); opacity: 1;
+}
+.tl-legend-swatch {
+  width: 20px; height: 6px; border-radius: 2px;
+}
+.tl-legend-swatch.open-swatch { background: linear-gradient(135deg, rgba(200,134,10,0.6), rgba(224,92,26,0.45)); }
+.tl-legend-swatch.soon-swatch { background: rgba(212,200,154,0.1); border: 1px dashed rgba(212,200,154,0.2); }
+
+/* "Currently open" callout banner */
+.cal-open-callout {
+  margin: 1.2rem 0 0;
+  padding: 1rem 1.4rem;
+  background: linear-gradient(135deg, rgba(200,134,10,0.1), rgba(224,92,26,0.05));
+  border: 1px solid rgba(200,134,10,0.3);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  animation: callout-pulse 3s ease-in-out infinite;
+  flex-wrap: wrap;
+}
+@keyframes callout-pulse {
+  0%, 100% { border-color: rgba(200,134,10,0.3); box-shadow: none; }
+  50%       { border-color: rgba(200,134,10,0.55); box-shadow: 0 0 20px rgba(200,134,10,0.12); }
+}
+.callout-left { display: flex; align-items: center; gap: 0.8rem; }
+.callout-pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--harvest);
+  box-shadow: 0 0 8px var(--harvest);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.callout-text { display: flex; flex-direction: column; gap: 0.2rem; }
+.callout-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.52rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--harvest);
+}
+.callout-desc {
+  font-size: 0.9rem; font-style: italic; color: var(--grain);
+}
+.callout-btn {
+  background: linear-gradient(135deg, var(--harvest), var(--ember));
+  border: none; color: var(--soil);
+  padding: 0.55rem 1.3rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.3s; white-space: nowrap; flex-shrink: 0;
+}
+.callout-btn:hover { box-shadow: 0 4px 20px rgba(200,134,10,0.4); transform: translateY(-1px); }
+
+/* Month detail panel — appears below strip on click (mobile-friendly) */
+.cal-detail-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s;
+  opacity: 0;
+  margin-top: 0.5rem;
+}
+.cal-detail-panel.open {
+  max-height: 200px;
+  opacity: 1;
+}
+.cal-detail-inner {
+  padding: 1rem 1.2rem;
+  background: rgba(14,11,5,0.7);
+  border: 1px solid var(--glass-border-dim);
+  display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;
+}
+.cal-detail-month {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 0.3em;
+  color: var(--harvest); text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.cal-detail-crops { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+.cal-detail-crop {
+  display: flex; align-items: center; gap: 0.7rem;
+}
+.cal-detail-crop-name { font-size: 0.9rem; font-style: italic; color: var(--grain); flex: 1; }
+.cal-detail-crop-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 2px;
+}
+.cal-detail-crop-status.open { background: rgba(200,134,10,0.15); color: var(--harvest); border: 1px solid rgba(200,134,10,0.35); }
+.cal-detail-crop-status.soon { background: rgba(212,200,154,0.06); color: var(--straw-dim); border: 1px solid var(--glass-border-dim); opacity: 0.7; }
+.cal-detail-action {
+  display: flex; align-items: center; align-self: center;
+}
+.cal-detail-invest {
+  background: none; border: 1px solid var(--harvest);
+  color: var(--harvest); padding: 0.4rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.25s; white-space: nowrap;
+}
+.cal-detail-invest:hover { background: var(--harvest); color: var(--soil); }
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.22s; }
+.reveal-delay-3 { transition-delay: 0.34s; }
+.reveal-delay-4 { transition-delay: 0.46s; }

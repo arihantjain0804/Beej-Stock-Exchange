@@ -1,0 +1,38 @@
+/* ── Hand Cursor ── */
+.hand-cursor {
+    position: fixed;
+    z-index: 10001;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: left 0.05s linear, top 0.05s linear;
+    display: none;
+}
+.hand-cursor.active { display:block; }
+.hc-dot {
+  width: 10px; height: 10px;
+  background: var(--harvest);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--harvest), 0 0 24px var(--harvest-glow);
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.hc-ring {
+  position: absolute;
+  top:50%; left:50%;
+  width: 30px; height: 30px;
+  border: 1px solid rgba(200,134,10,0.35);
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+  transition: all 0.15s ease;
+}
+.hand-cursor[data-fist="true"] .hc-dot {
+  transform: scale(0.6);
+  background: var(--sky);
+  box-shadow: 0 0 20px var(--sky), 0 0 40px rgba(232,200,122,0.5);
+}
+.hand-cursor[data-fist="true"] .hc-ring {
+  width: 18px; height: 18px;
+  border-color: rgba(232,200,122,0.6);
+}
+
+.hand-tracking-active * { cursor:none !important; 
+}

@@ -1,0 +1,51 @@
+/* ============================================================
+   TRUST METRICS BAND
+   ============================================================ */
+.trust {
+  padding: 5rem 0;
+  background: linear-gradient(180deg, transparent, rgba(17,21,9,0.4), transparent);
+  border-top: 1px solid var(--glass-border-dim);
+  border-bottom: 1px solid var(--glass-border-dim);
+}
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.trust-metric {
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+}
+.trust-metric + .trust-metric::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; height: 60%;
+  width: 1px;
+  background: var(--glass-border-dim);
+}
+.tm-num {
+  display: block;
+  font-size: 3rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--sky);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+.tm-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  color: var(--straw-dim);
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+.tm-sub {
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--straw-dim);
+  opacity: 0.4;
+  margin-top: 0.3rem;
+}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAppContext } from "../../../context/AppContext";
+import './WalletModal.css';
 
 const WALLETS = [
   {
@@ -204,14 +205,14 @@ export default function WalletModal() {
               <button
                 className="wm-btn-disconnect"
                 style={{ borderColor: "rgba(200,134,10,0.35)", color: "var(--sky)" }}
-                data-open-investor-modal
+                onClick={() => { handleClose(); setInvestorModal(true); }}
               >
                 Investor Profile →
               </button>
               <button
                 className="wm-btn-disconnect"
                 style={{ borderColor: "var(--glass-border)", color: "var(--straw-dim)" }}
-                onClick={handleClose}
+                onClick={() => { handleClose(); document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' }); }}
               >
                 Browse Markets
               </button>

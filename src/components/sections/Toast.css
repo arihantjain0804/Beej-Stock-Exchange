@@ -1,0 +1,13 @@
+/* ── Toast ── */
+.trade-toast {
+  position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(20px);
+  z-index:9500; background:#0f0c05; border:1px solid var(--harvest); min-width:320px;
+  display:flex; align-items:center; gap:1rem; padding:1rem 1.3rem;
+  opacity:0; pointer-events:none; transition:opacity 0.35s, transform 0.35s cubic-bezier(0.16,1,0.3,1);
+  box-shadow:0 8px 40px rgba(200,134,10,0.2);
+}
+.trade-toast::before { content:''; position:absolute; top:0; left:10%; right:10%; height:1px; background:linear-gradient(to right,transparent,var(--harvest),transparent); }
+.trade-toast.show { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+.toast-body { flex:1; }
+.toast-title { font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-weight:500; color:var(--grain); margin-bottom:0.1rem; }
+.toast-detail { font-family:'JetBrains Mono',monospace; font-size:0.52rem; color:var(--straw-dim); opacity:0.65; }

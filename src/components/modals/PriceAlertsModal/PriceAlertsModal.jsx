@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { BSI_CONSTITUENTS } from '../../../data/tokens';
+import './PriceAlertsModal.css';
 
 const CONDITION_OPTIONS = [
   { value: 'above', label: 'Rises above' },

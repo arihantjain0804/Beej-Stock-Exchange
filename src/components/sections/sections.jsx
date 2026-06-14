@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { MONTHS } from '../../data/tokens';
+import './ProblemSection.css';
+import './HowItWorks.css';
+import './TrustMetrics.css';
+import './SeasonCalendar.css';
+import './ReturnSection.css';
+import './Footer.css';
+import './Toast.css';
 
 const steps = [
   { num: '01', icon: '🌱', title: 'A farmer lists a crop', body: 'A verified farmer submits their crop project — land size, crop variety, expected yield, funding need, and season timeline. A BSE agronomist validates the listing within 48 hours.', data: 'YIELD ESTIMATE · RISK SCORE · VERIFIED DATA' },

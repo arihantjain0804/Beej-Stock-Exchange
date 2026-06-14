@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { BSI_CONSTITUENTS } from '../../../data/tokens';
+import './YieldCalculatorModal.css';
 
 const SEASONS = [
   { value: 'kharif_25', label: 'Kharif 2025 (Jun–Nov)' },

@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import './Nav.css';
+import './MobileNav.css';
 
 // ─── Nav Component (v24) ──────────────────────────────────────────────────────
 export default function Nav() {
@@ -143,7 +145,7 @@ useEffect(() => {
       {/* ── Mobile Bottom Nav ── */}
       <div className="mobile-bottom-nav" aria-label="Mobile navigation">
         <div className="mbn-track">
-          <button className="mbn-tab active" aria-label="Markets" onClick={() => scrollTo('projects')}>
+          <button className="mbn-tab active" aria-label="Markets" onClick={() => setTradeOpen(true)}>
             <div className="mbn-icon">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <polyline points="3 17 8 11 13 14 21 7" />
@@ -163,7 +165,7 @@ useEffect(() => {
             <span className="mbn-label">Index</span>
           </button>
 
-          <button className="mbn-tab mbn-center" aria-label="Trade" onClick={() => scrollTo('projects')}>
+          <button className="mbn-tab mbn-center" aria-label="Trade" onClick={() => setTradeOpen(true)}>
             <div className="mbn-icon">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <line x1="12" y1="5" x2="12" y2="19" />

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { useHandTracking } from '../../../hooks/useHandTracking';
+import './IntroOverlay.css';
 // ─── IntroOverlay (v24) ───────────────────────────────────────────────────────
 // Shows on first load. User can enter with mouse or enable hand tracking
 // via MediaPipe before entering the exchange.
