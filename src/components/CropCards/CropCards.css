@@ -253,3 +253,34 @@
   background: var(--harvest-dim);
   border-color: var(--harvest);
 }
+/* ============================================================
+   ACTIVE CROP PROJECTS
+   ============================================================ */
+.projects {
+  padding: 8rem 0;
+}
+
+.projects-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 3.5rem;
+}
+.projects-header-left {}
+.projects-view-all {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--harvest);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: gap 0.3s;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+.projects-view-all:hover { gap: 0.9rem; }

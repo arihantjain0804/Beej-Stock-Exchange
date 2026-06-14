@@ -200,6 +200,7 @@ export function ReturnSection() {
 }
 
 export function Footer() {
+  const { setFarmerModal, setTradeOpen } = useAppContext();
   return (
     <footer>
       <div className="footer-top">
@@ -211,11 +212,11 @@ export function Footer() {
         <div>
           <div className="footer-col-heading">Platform</div>
           <ul className="footer-col-links">
-            <li><a>Browse Markets</a></li>
-            <li><a>List Your Crop</a></li>
-            <li><a>How It Works</a></li>
-            <li><a>Token Standards</a></li>
-            <li><a>Smart Contracts</a></li>
+            <li><a onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}>Browse Markets</a></li>
+            <li><a onClick={() => setFarmerModal(true)}>List Your Crop</a></li>
+            <li><a onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}>How It Works</a></li>
+            <li><a onClick={() => document.getElementById('trust')?.scrollIntoView({ behavior: 'smooth' })}>About</a></li>
+            <li><a onClick={() => setTradeOpen(true)}>Trade</a></li>
           </ul>
         </div>
         <div>

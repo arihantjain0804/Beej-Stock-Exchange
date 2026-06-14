@@ -42,7 +42,7 @@ const WALLETS = [
 ];
 
 export default function WalletModal() {
-  const { walletOpen, setWalletOpen, setPortfolioOpen, handleConnect } = useAppContext();
+  const { walletOpen, setWalletOpen, setPortfolioOpen, handleConnect, setInvestorModal } = useAppContext();
 
   const [panel, setPanel] = useState("choose"); // "choose" | "connecting" | "connected"
   const [activeWallet, setActiveWallet] = useState(WALLETS[0]);

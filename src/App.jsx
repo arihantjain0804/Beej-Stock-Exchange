@@ -1,6 +1,7 @@
 import './styles/base.css';
 import './styles/animations.css';
 import './styles/HandCursor.css';
+import './styles/responsive.css';
 
 import { AppProvider, useAppContext } from './context/AppContext';
 

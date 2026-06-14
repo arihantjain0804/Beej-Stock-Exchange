@@ -1,0 +1,89 @@
+/* ============================================================
+   RESPONSIVE — FULL MOBILE PASS
+   ============================================================ */
+@media (max-width: 1024px) {
+  .footer-top { grid-template-columns: 1fr 1fr; }
+  .footer-sebi { grid-column: 1 / -1; }
+}
+
+@media (max-width: 900px) {
+  nav { padding: 1.2rem 1.5rem; }
+  .nav-links { display: none; }
+  .nav-right .nav-tag { display: none; }
+
+  /* Hero */
+  .hero-stats { gap: 1.8rem; }
+  .h-stat-num { font-size: 1.3rem; }
+  .hero-cta-wrap { flex-direction: column; align-items: center; }
+  .cta-investor, .cta-farmer { min-width: unset; width: 100%; max-width: 340px; }
+
+  /* Problem */
+  .problem-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .seed-orb-divider { margin: 0; }
+
+  /* How */
+  .how-steps { grid-template-columns: 1fr; gap: 3rem; }
+  .how-steps::before { display: none; }
+  .how-step { padding: 0 1rem; }
+  .hiw-connector, .hiw-node { display: none; }
+
+  /* Cards */
+  .crop-cards { grid-template-columns: 1fr; }
+
+  /* Season calendar */
+  .month-name { font-size: 0.45rem; }
+
+  /* Trust */
+  .trust-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Section */
+  .section-inner { padding: 0 1.5rem; }
+
+  /* Footer */
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 2rem; padding: 3rem 1.5rem 2rem; }
+  .footer-bottom { padding: 1rem 1.5rem; flex-direction: column; gap: 0.8rem; text-align: center; }
+  .footer-col-brand { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+  .hero-title { font-size: 2.6rem; }
+  .hero-stats { gap: 1.2rem; flex-wrap: wrap; }
+  .h-stat + .h-stat::before { display: none; }
+  .section-title { font-size: 1.9rem; }
+  .return-title { font-size: 2.4rem; }
+
+  /* Season — hide some months on tiny screens */
+  .month-col:nth-child(even) .month-name { display: none; }
+  .month-col:nth-child(even) .month-open-badge { display: none; }
+  .crop-pill { font-size: 0.38rem; padding: 1px 3px; }
+  .cal-tooltip { display: none; }
+
+  /* Footer */
+  .footer-top { grid-template-columns: 1fr; }
+  .footer-sebi { display: block; } /* too small to read anyway */
+
+  /* season legend */
+  .season-legend { gap: 1.2rem; }
+
+  /* intro box */
+  .intro-box { margin: 1rem; padding: 2rem 1.5rem; }
+
+  /* return section */
+  .return-cta-wrap { flex-direction: column; align-items: center; }
+  .return-cta-wrap button { width: 100%; max-width: 300px; }
+}
+/* ── Mobile nav ── */
+@media(max-width:900px) {
+  nav { padding:1.2rem 1.5rem; }
+  .nav-links { display:none; }
+  .hero-content { padding:0 1.5rem; }
+  .section-inner { padding:0 1.5rem; }
+  .trust-grid { grid-template-columns:repeat(2,1fr); }
+  .problem-grid { grid-template-columns:1fr; }
+  .seed-orb-divider { display:none; }
+  .how-steps { grid-template-columns:1fr; }
+  .how-steps::before { display:none; }
+  footer { padding:3rem 1.5rem; }
+  .footer-inner { grid-template-columns:1fr; gap:2rem; }
+  .portfolio-drawer { width:100%; }
+}
