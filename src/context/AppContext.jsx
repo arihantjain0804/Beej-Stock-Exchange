@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { TOKENS, seedPrices } from '../data/tokens';
 import { useLivePrices } from '../hooks/useLivePrices';
-import { useReveal } from '../hooks/useReveal';
 
 // ─── Context Definition ───────────────────────────────────────────────────────
 const AppContext = createContext(null);
@@ -25,9 +24,6 @@ export function AppProvider({ children }) {
   // Live token prices
   const [tokens, setTokens] = useState(() => seedPrices(TOKENS));
   useLivePrices(setTokens);
-
-  // Scroll reveal animations
-  useReveal();
 
   // Wallet
   const [walletOpen, setWalletOpen] = useState(false);

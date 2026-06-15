@@ -3,19 +3,16 @@ import './styles/responsive.css';
 import './styles/HandCursor.css';
 
 import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
 
-// Layout components
-import Nav       from './components/Nav/Nav';
-import Hero      from './components/Hero/Hero';
-import BeejIndex from './components/Beej-Index/Beej-Index';
-import CropCards from './components/CropCards/CropCards';
+// Layout
+import Nav from './components/Nav/Nav';
+import { Footer, Toast } from './components/sections/sections.jsx';
 
-// Section components
-import {
-  ProblemSection, HowItWorks, TrustMetrics,
-  SeasonCalendar, ReturnSection, Footer, Toast,
-} from './components/sections/sections.jsx';
+// Drawers
+import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
+import WatchlistDrawer from './components/drawers/WatchlistDrawer/WatchlistDrawer';
 
 // Modals
 import WalletModal          from './components/modals/WalletModal/WalletModal';
@@ -28,9 +25,10 @@ import PriceAlertsModal     from './components/modals/PriceAlertsModal/PriceAler
 import YieldCalculatorModal from './components/modals/YieldCalculatorModal/YieldCalculatorModal';
 import NotificationsPanel   from './components/modals/NotificationsPanel/NotificationsPanel';
 
-// Drawers
-import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
-import WatchlistDrawer from './components/drawers/WatchlistDrawer/WatchlistDrawer';
+// Pages
+import HomePage     from './pages/HomePage';
+import MarketsPage  from './pages/MarketsPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
@@ -44,27 +42,29 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// ─── Inner App (has access to context) ───────────────────────────────────────
-function AppInner() {
+// ─── Shared shell (Nav + modals + drawers persist across all routes) ──────────
+function AppShell() {
   const { entered, walletOpen, cropDetail, farmerModal, investorModal } = useAppContext();
 
   return (
     <>
       {!entered && <IntroOverlay />}
       <Nav />
-      <main>
-        <Hero />
-        <ProblemSection />
-        <HowItWorks />
-        <CropCards />
-        <BeejIndex />
-        <TrustMetrics />
-        <SeasonCalendar />
-        <ReturnSection />
-      </main>
+
+      {/* Page content swaps here */}
+      <Routes>
+        <Route path="/"        element={<HomePage />} />
+        <Route path="/markets" element={<MarketsPage />} />
+        <Route path="*"        element={<NotFoundPage />} />
+      </Routes>
+
       <Footer />
+
+      {/* Drawers — global, always mounted */}
       <PortfolioDrawer />
       <WatchlistDrawer />
+
+      {/* Modals — global, always mounted or conditionally rendered */}
       {walletOpen    && <WalletModal />}
       {cropDetail    && <CropDetailModal />}
       {farmerModal   && <FarmerModal />}
@@ -82,9 +82,11 @@ function AppInner() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <AppInner />
-      </AppProvider>
+      <BrowserRouter>
+        <AppProvider>
+          <AppShell />
+        </AppProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

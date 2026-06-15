@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import './Nav.css';
 import './MobileNav.css';
 
-// ─── Nav Component (v24) ──────────────────────────────────────────────────────
+// ─── Nav Component ─────────────────────────────────────────────────────────────
 export default function Nav() {
   const {
     connected,
@@ -17,42 +18,83 @@ export default function Nav() {
     setTradeOpen,
     setPriceAlertsOpen,
     setYieldCalcOpen,
-    setNotifOpen, unreadCount
+    setNotifOpen, unreadCount,
   } = useAppContext();
 
-  const scrollTo = (id) =>
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  const navigate  = useNavigate();
+  const { pathname } = useLocation();
 
-useEffect(() => {
-  const handleScroll = () => {
-    const navEl = document.querySelector('nav:first-of-type');
-    if (window.scrollY > 50) {
-      navEl?.classList.add('scrolled');
+  // Scroll to a section ID — works on the current page or navigates first
+  const scrollTo = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
     } else {
-      navEl?.classList.remove('scrolled');
+      // Not on homepage yet — go there, then scroll after render
+      navigate('/', { state: { scrollTo: id } });
     }
   };
-  handleScroll(); // run once on mount
-  window.addEventListener('scroll', handleScroll);
-  return () => window.removeEventListener('scroll', handleScroll);
-}, []);
+
+  // Navigate to /markets and optionally open a modal via ?open= param
+  const goMarkets = (open) => {
+    navigate(open ? `/markets?open=${open}` : '/markets');
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const navEl = document.querySelector('nav:first-of-type');
+      if (window.scrollY > 50) {
+        navEl?.classList.add('scrolled');
+      } else {
+        navEl?.classList.remove('scrolled');
+      }
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <>
       {/* ── Desktop Nav ── */}
       <nav>
-        <div className="nav-brand">
+        <Link to="/" className="nav-brand" style={{ textDecoration: 'none' }}>
           <span className="nav-brand-main">BSE · BEEJ</span>
           <span className="nav-brand-sub">बीज स्टॉक एक्सचेंज</span>
-        </div>
+        </Link>
 
         <ul className="nav-links">
-          <li><a onClick={() => scrollTo('projects')} style={{ cursor: 'pointer' }}>Markets</a></li>
-          <li><a onClick={() => scrollTo('bse-index')} style={{ cursor: 'pointer' }}>BEEJ-50</a></li>
-          <li><a onClick={() => scrollTo('how')} style={{ cursor: 'pointer' }}>How It Works</a></li>
-          <li><a onClick={() => {setFarmerModal(true); }} style={{ cursor: 'pointer' }}>For Farmers</a></li>
-          <li><a onClick={() => {setInvestorModal(true); }} style={{ cursor: 'pointer' }}>For Investors</a></li>
-          <li><a onClick={() => scrollTo('trust')} style={{ cursor: 'pointer' }}>About</a></li>
+          <li>
+            <a onClick={() => goMarkets()} style={{ cursor: 'pointer' }}
+               className={pathname === '/markets' ? 'active' : ''}>
+              Markets
+            </a>
+          </li>
+          <li>
+            <a onClick={() => scrollTo('bse-index')} style={{ cursor: 'pointer' }}>
+              BEEJ-50
+            </a>
+          </li>
+          <li>
+            <a onClick={() => scrollTo('how')} style={{ cursor: 'pointer' }}>
+              How It Works
+            </a>
+          </li>
+          <li>
+            <a onClick={() => setFarmerModal(true)} style={{ cursor: 'pointer' }}>
+              For Farmers
+            </a>
+          </li>
+          <li>
+            <a onClick={() => setInvestorModal(true)} style={{ cursor: 'pointer' }}>
+              For Investors
+            </a>
+          </li>
+          <li>
+            <a onClick={() => scrollTo('trust')} style={{ cursor: 'pointer' }}>
+              About
+            </a>
+          </li>
           <li>
             <a onClick={() => setTradeOpen(true)} style={{ cursor: 'pointer', position: 'relative' }}>
               Trade{' '}
@@ -74,7 +116,7 @@ useEffect(() => {
         </ul>
 
         <div className="nav-right">
-          {/* Watchlist button */}
+          {/* Watchlist */}
           <button
             className={`nav-watchlist${watchlist.length > 0 ? ' has-items' : ''}`}
             onClick={() => setWatchlistOpen(true)}
@@ -84,14 +126,11 @@ useEffect(() => {
               <path className="nw-fill" d="M1 1h12v13.5l-6-3.5-6 3.5V1z" strokeLinejoin="round" stroke="currentColor" />
             </svg>
             Watchlist
-            <span 
-              className={`wl-badge${watchlist.length > 0 ? ' visible' : ''}`}>{watchlist.length}
-            </span>
+            <span className={`wl-badge${watchlist.length > 0 ? ' visible' : ''}`}>{watchlist.length}</span>
           </button>
 
-          {/* Icon tray — Alerts + Yield Calculator only */}
+          {/* Icon tray */}
           <div className="nav-icon-tray">
-            {/* Price Alerts */}
             <button className="nav-icon-btn" aria-label="Price Alerts" title="Price Alerts" onClick={() => setPriceAlertsOpen(true)}>
               <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '15px', height: '15px' }}>
                 <path d="M10 2C10 2 5 4.5 5 10V14L3 16H17L15 14V10C15 4.5 10 2 10 2Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
@@ -100,7 +139,6 @@ useEffect(() => {
               </svg>
             </button>
 
-            {/* Yield Calculator */}
             <button className="nav-icon-btn" aria-label="Yield Calculator" title="Yield Calculator" onClick={() => setYieldCalcOpen(true)}>
               <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '15px', height: '15px' }}>
                 <rect x="3" y="2" width="14" height="16" rx="1" stroke="currentColor" strokeWidth="1.3" />
@@ -110,7 +148,6 @@ useEffect(() => {
               </svg>
             </button>
 
-            {/* Notification Bell */}
             <button className="nav-bell" aria-label="Notifications" title="Notifications" onClick={() => setNotifOpen(true)}>
               <svg className="nav-bell-icon" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10 1C10 1 4 4 4 11V16L2 18H18L16 16V11C16 4 10 1 10 1Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
@@ -122,14 +159,14 @@ useEffect(() => {
             </button>
           </div>
 
-          {/* Wallet button */}
-          <button  
-          className={`nav-wallet ${connected ? 'connected' : ''}`} 
-            onClick={() => setWalletOpen(true)}>
+          {/* Wallet */}
+          <button
+            className={`nav-wallet ${connected ? 'connected' : ''}`}
+            onClick={() => setWalletOpen(true)}
+          >
             {connected ? `🔶 ${walletAddr}` : 'Connect Wallet'}
           </button>
 
-          {/* Portfolio — only show when connected */}
           {connected && (
             <button
               className="nav-wallet"
@@ -145,7 +182,11 @@ useEffect(() => {
       {/* ── Mobile Bottom Nav ── */}
       <div className="mobile-bottom-nav" aria-label="Mobile navigation">
         <div className="mbn-track">
-          <button className="mbn-tab active" aria-label="Markets" onClick={() => setTradeOpen(true)}>
+          <button
+            className={`mbn-tab${pathname === '/markets' ? ' active' : ''}`}
+            aria-label="Markets"
+            onClick={() => goMarkets()}
+          >
             <div className="mbn-icon">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <polyline points="3 17 8 11 13 14 21 7" />
@@ -155,7 +196,11 @@ useEffect(() => {
             <span className="mbn-label">Markets</span>
           </button>
 
-          <button className="mbn-tab" aria-label="BEEJ-50 Index" onClick={() => scrollTo('bse-index')}>
+          <button
+            className="mbn-tab"
+            aria-label="BEEJ-50 Index"
+            onClick={() => scrollTo('bse-index')}
+          >
             <div className="mbn-icon">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="12" cy="12" r="9" />
@@ -165,7 +210,11 @@ useEffect(() => {
             <span className="mbn-label">Index</span>
           </button>
 
-          <button className="mbn-tab mbn-center" aria-label="Trade" onClick={() => setTradeOpen(true)}>
+          <button
+            className="mbn-tab mbn-center"
+            aria-label="Trade"
+            onClick={() => setTradeOpen(true)}
+          >
             <div className="mbn-icon">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -175,7 +224,11 @@ useEffect(() => {
             <span className="mbn-label">Trade</span>
           </button>
 
-          <button className="mbn-tab" aria-label="Price Alerts">
+          <button
+            className="mbn-tab"
+            aria-label="Price Alerts"
+            onClick={() => setPriceAlertsOpen(true)}
+          >
             <div className="mbn-icon">
               <svg viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.3">
                 <path d="M10 1C10 1 4 4 4 11V16L2 18H18L16 16V11C16 4 10 1 10 1Z" strokeLinejoin="round" />
@@ -185,7 +238,11 @@ useEffect(() => {
             <span className="mbn-label">Alerts</span>
           </button>
 
-          <button className="mbn-tab" aria-label="Portfolio" onClick={() => setPortfolioOpen(true)}>
+          <button
+            className="mbn-tab"
+            aria-label="Portfolio"
+            onClick={() => setPortfolioOpen(true)}
+          >
             <div className="mbn-icon">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="2" y="7" width="20" height="14" rx="1" />
