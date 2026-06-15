@@ -1,8 +1,8 @@
 import './styles/base.css';
-import './styles/animations.css';
-import './styles/HandCursor.css';
 import './styles/responsive.css';
+import './styles/HandCursor.css';
 
+import React from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
 
 // Layout components
@@ -13,46 +13,45 @@ import CropCards from './components/CropCards/CropCards';
 
 // Section components
 import {
-  ProblemSection,
-  HowItWorks,
-  TrustMetrics,
-  SeasonCalendar,
-  ReturnSection,
-  Footer,
-  Toast,
+  ProblemSection, HowItWorks, TrustMetrics,
+  SeasonCalendar, ReturnSection, Footer, Toast,
 } from './components/sections/sections.jsx';
 
 // Modals
-import WalletModal     from './components/modals/WalletModal/WalletModal';
-import CropDetailModal from './components/modals/CropDetailModal/CropDetailModal';
-import FarmerModal     from './components/modals/FarmerModal/FarmerModal';
-import InvestorModal   from './components/modals/InvestorModal/InvestorModal';
-import IntroOverlay    from './components/modals/IntroOverlay/IntroOverlay';
-import TradeModal      from './components/modals/TradeModal/TradeModal';
-import PriceAlertsModal from './components/modals/PriceAlertsModal/PriceAlertsModal';
+import WalletModal          from './components/modals/WalletModal/WalletModal';
+import CropDetailModal      from './components/modals/CropDetailModal/CropDetailModal';
+import FarmerModal          from './components/modals/FarmerModal/FarmerModal';
+import InvestorModal        from './components/modals/InvestorModal/InvestorModal';
+import IntroOverlay         from './components/modals/IntroOverlay/IntroOverlay';
+import TradeModal           from './components/modals/TradeModal/TradeModal';
+import PriceAlertsModal     from './components/modals/PriceAlertsModal/PriceAlertsModal';
 import YieldCalculatorModal from './components/modals/YieldCalculatorModal/YieldCalculatorModal';
-import NotificationsPanel  from './components/modals/NotificationsPanel/NotificationsPanel';
+import NotificationsPanel   from './components/modals/NotificationsPanel/NotificationsPanel';
 
 // Drawers
 import PortfolioDrawer from './components/drawers/PortfolioDrawer/PortfolioDrawer';
 import WatchlistDrawer from './components/drawers/WatchlistDrawer/WatchlistDrawer';
 
+// ─── Error Boundary ───────────────────────────────────────────────────────────
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return (
+      <div className="error-fallback">Something went wrong. Please refresh.</div>
+    );
+    return this.props.children;
+  }
+}
+
 // ─── Inner App (has access to context) ───────────────────────────────────────
 function AppInner() {
-  const {
-    entered,
-    walletOpen,
-    cropDetail,
-    farmerModal,
-    investorModal,
-  } = useAppContext();
+  const { entered, walletOpen, cropDetail, farmerModal, investorModal } = useAppContext();
 
   return (
     <>
       {!entered && <IntroOverlay />}
-
       <Nav />
-
       <main>
         <Hero />
         <ProblemSection />
@@ -63,12 +62,9 @@ function AppInner() {
         <SeasonCalendar />
         <ReturnSection />
       </main>
-
       <Footer />
-
       <PortfolioDrawer />
       <WatchlistDrawer />
-
       {walletOpen    && <WalletModal />}
       {cropDetail    && <CropDetailModal />}
       {farmerModal   && <FarmerModal />}
@@ -77,7 +73,6 @@ function AppInner() {
       <PriceAlertsModal />
       <YieldCalculatorModal />
       <NotificationsPanel />
-
       <Toast />
     </>
   );
@@ -86,8 +81,10 @@ function AppInner() {
 // ─── Root App ─────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <AppProvider>
-      <AppInner />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppInner />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
