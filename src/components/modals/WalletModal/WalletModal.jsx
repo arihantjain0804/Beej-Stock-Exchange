@@ -92,7 +92,7 @@ export default function WalletModal() {
 
   return (
     <div id="wallet-modal-backdrop" className="wallet-modal-backdrop open" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className="wm-shell">
+      <div className="wm-shell" role="dialog" aria-modal="true" aria-label="Connect Wallet">
 
         {/* ── PANEL 1: Choose Method ── */}
         <div className={`wm-panel${panel === "choose" ? " active" : ""}`} id="wm-panel-choose">

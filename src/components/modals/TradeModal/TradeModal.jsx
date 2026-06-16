@@ -305,7 +305,7 @@ export default function TradeModal() {
 
   return (
     <div className="tm-overlay" onClick={e => e.target === e.currentTarget && setTradeOpen(false)}>
-      <div className="tm-shell">
+      <div className="tm-shell" role="dialog" aria-modal="true" aria-label="Trade">
 
         {/* ── Header ── */}
         <div className="tm-header">

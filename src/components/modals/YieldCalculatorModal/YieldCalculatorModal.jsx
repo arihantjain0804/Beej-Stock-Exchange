@@ -146,7 +146,7 @@ export default function YieldCalculatorModal() {
 
   return (
     <div id="yc-backdrop" className="open" onClick={e => e.target.id === 'yc-backdrop' && setYieldCalcOpen(false)}>
-      <div id="yc-modal">
+      <div id="yc-modal" role="dialog" aria-modal="true" aria-label="Yield Calculator">
 
         {/* Header */}
         <div id="yc-header">

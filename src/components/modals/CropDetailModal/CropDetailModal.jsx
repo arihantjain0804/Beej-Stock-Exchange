@@ -217,7 +217,12 @@ export default function CropDetailModal() {
 
   return (
     <div className="crop-modal-backdrop open" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className={`cem-shell ${cropDetail.risk === "med" ? "risk-med" : ""}`}>
+      <div
+        className={`cem-shell ${cropDetail.risk === "med" ? "risk-med" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={cropDetail.name}
+      >
 
         <div className="cem-header">
           <div>

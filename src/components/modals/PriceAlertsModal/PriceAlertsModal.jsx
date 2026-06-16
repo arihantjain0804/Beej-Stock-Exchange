@@ -89,7 +89,7 @@ export default function PriceAlertsModal() {
   return (
     <>
       <div className={`pa-backdrop open`} onClick={e => e.target === e.currentTarget && setPriceAlertsOpen(false)}>
-        <div className="pa-modal">
+        <div className="pa-modal" role="dialog" aria-modal="true" aria-label="Price Alerts">
 
           {/* Header */}
           <div className="pa-header">

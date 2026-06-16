@@ -21,7 +21,7 @@ export default function WatchlistDrawer() {
         className={`watchlist-scrim${watchlistOpen ? ' open' : ''}`}
         onClick={() => setWatchlistOpen(false)}
       />
-      <div className={`wl-drawer${watchlistOpen ? ' open' : ''}`} role="dialog" aria-label="Your Watchlist">
+      <div className={`wl-drawer${watchlistOpen ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Your Watchlist">
         
         {/* Header */}
         <div className="wl-header">

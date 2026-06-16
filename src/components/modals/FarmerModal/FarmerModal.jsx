@@ -90,7 +90,7 @@ export default function FarmerModal() {
         }}
         onClick={(e) => e.target === e.currentTarget && handleClose()}
       >
-      <div className="fom-shell">
+      <div className="fom-shell" role="dialog" aria-modal="true" aria-label="Farmer Registration">
 
         {/* Close */}
         <button className="fom-close" onClick={handleClose} aria-label="Close">✕</button>

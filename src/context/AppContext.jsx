@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { TOKENS, seedPrices } from '../data/tokens';
 import { useLivePrices } from '../hooks/useLivePrices';
 
@@ -50,6 +50,32 @@ export function AppProvider({ children }) {
 
   // Toast notification
   const [toast, setToast] = useState({ show: false, title: '', detail: '' });
+
+  // ─── Escape key closes the topmost open modal/drawer ───────────────────────
+  // Order is a best-effort approximation of stacking (e.g. WalletModal and
+  // PriceAlertsModal can be opened on top of another open surface) — there is
+  // no real z-index/open-order tracking, so this assumes only one likely
+  // "topmost" surface is open at a time in practice.
+  useEffect(() => {
+    function handleEscape(e) {
+      if (e.key !== 'Escape') return;
+      if (walletOpen) setWalletOpen(false);
+      else if (priceAlertsOpen) setPriceAlertsOpen(false);
+      else if (investorModal) setInvestorModal(false);
+      else if (notifOpen) setNotifOpen(false);
+      else if (yieldCalcOpen) setYieldCalcOpen(false);
+      else if (tradeOpen) setTradeOpen(false);
+      else if (farmerModal) setFarmerModal(false);
+      else if (cropDetail) setCropDetail(null);
+      else if (watchlistOpen) setWatchlistOpen(false);
+      else if (portfolioOpen) setPortfolioOpen(false);
+    }
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [
+    walletOpen, priceAlertsOpen, investorModal, notifOpen, yieldCalcOpen,
+    tradeOpen, farmerModal, cropDetail, watchlistOpen, portfolioOpen,
+  ]);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const showToast = useCallback((title, detail) => {

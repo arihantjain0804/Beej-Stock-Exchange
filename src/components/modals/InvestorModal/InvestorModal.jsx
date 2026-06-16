@@ -99,7 +99,7 @@ export default function InvestorModal() {
 
   return (
     <div className="investor-modal-backdrop open" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="iom-shell">
+      <div className="iom-shell" role="dialog" aria-modal="true" aria-label="Investor Registration">
 
         <button className="iom-close" onClick={onClose}>✕</button>
 

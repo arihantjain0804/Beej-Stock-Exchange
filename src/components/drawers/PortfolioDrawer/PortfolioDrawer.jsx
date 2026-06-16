@@ -52,7 +52,7 @@ export default function PortfolioDrawer() {
       />
 
       {/* Drawer */}
-      <div className={`pf-drawer${portfolioOpen ? ' open' : ''}`} role="dialog" aria-label="My Portfolio">
+      <div className={`pf-drawer${portfolioOpen ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="My Portfolio">
 
         {/* Header */}
         <div className="pf-header">

@@ -63,7 +63,7 @@ function filterNotifs(notifs, tab) {
 }
 
 export default function NotificationsPanel() {
-  const { notifOpen, setNotifOpen, notifs, setNotifs, unreadCount } = useAppContext();
+  const { notifOpen, setNotifOpen, notifs, setNotifs, unreadCount, setPriceAlertsOpen } = useAppContext();
   const [activeTab, setActiveTab] = useState('All');
   const filtered = filterNotifs(notifs, activeTab);
 
@@ -117,7 +117,7 @@ export default function NotificationsPanel() {
       />
 
       {/* Panel */}
-      <div className={`notif-panel${notifOpen ? ' open' : ''}`}>
+      <div className={`notif-panel${notifOpen ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Notifications">
 
         {/* Header */}
         <div className="notif-header">
