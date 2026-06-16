@@ -1,0 +1,165 @@
+diff --git a/package.json b/package.json
+index 6454be7..c9758bb 100644
+--- a/package.json
++++ b/package.json
+@@ -7,7 +7,9 @@
+     "dev": "vite",
+     "build": "vite build",
+     "lint": "eslint .",
+-    "preview": "vite preview"
++    "preview": "vite preview",
++    "test": "vitest run",
++    "test:watch": "vitest"
+   },
+   "dependencies": {
+     "react": "^19.2.6",
+@@ -17,6 +19,7 @@
+   },
+   "devDependencies": {
+     "@eslint/js": "^10.0.1",
++    "@testing-library/jest-dom": "^6.9.1",
+     "@testing-library/react": "^16.3.2",
+     "@types/react": "^19.2.14",
+     "@types/react-dom": "^19.2.3",
+@@ -25,6 +28,7 @@
+     "eslint-plugin-react-hooks": "^7.1.1",
+     "eslint-plugin-react-refresh": "^0.5.2",
+     "globals": "^17.6.0",
++    "jsdom": "^29.1.1",
+     "vite": "^8.0.12",
+     "vitest": "^4.1.9"
+   }
+diff --git a/src/components/sections/Footer.test.jsx b/src/components/sections/Footer.test.jsx
+new file mode 100644
+index 0000000..568777b
+--- /dev/null
++++ b/src/components/sections/Footer.test.jsx
+@@ -0,0 +1,20 @@
++import { afterEach, describe, expect, it } from 'vitest';
++import { cleanup, render, screen } from '@testing-library/react';
++import { Footer } from './sections.jsx';
++import { AppProvider } from '../../context/AppContext';
++
++afterEach(() => cleanup());
++
++describe('Footer', () => {
++  it('renders the three column headings', () => {
++    render(
++      <AppProvider>
++        <Footer />
++      </AppProvider>
++    );
++
++    ['Platform', 'Company', 'Legal & Compliance'].forEach(heading => {
++      expect(screen.getByText(heading)).toBeInTheDocument();
++    });
++  });
++});
+diff --git a/src/components/sections/SeasonCalendar.test.jsx b/src/components/sections/SeasonCalendar.test.jsx
+new file mode 100644
+index 0000000..8c60e7c
+--- /dev/null
++++ b/src/components/sections/SeasonCalendar.test.jsx
+@@ -0,0 +1,27 @@
++import { afterEach, describe, expect, it } from 'vitest';
++import { cleanup, render, screen } from '@testing-library/react';
++import { SeasonCalendar } from './sections.jsx';
++import { AppProvider } from '../../context/AppContext';
++import { MONTHS } from '../../data/tokens';
++
++afterEach(() => cleanup());
++
++describe('SeasonCalendar', () => {
++  it('renders exactly one column for each of the 12 months', () => {
++    const { container } = render(
++      <AppProvider>
++        <SeasonCalendar />
++      </AppProvider>
++    );
++
++    // Guards against the data source itself drifting away from 12 months
++    expect(MONTHS).toHaveLength(12);
++
++    MONTHS.forEach(month => {
++      expect(screen.getByText(month)).toBeInTheDocument();
++    });
++
++    const columns = container.querySelectorAll('.month-col');
++    expect(columns).toHaveLength(12);
++  });
++});
+diff --git a/src/context/AppContext.test.jsx b/src/context/AppContext.test.jsx
+new file mode 100644
+index 0000000..7351883
+--- /dev/null
++++ b/src/context/AppContext.test.jsx
+@@ -0,0 +1,49 @@
++import { afterEach, describe, expect, it } from 'vitest';
++import { cleanup, fireEvent, render, screen } from '@testing-library/react';
++import { AppProvider, useAppContext } from './AppContext';
++
++afterEach(() => cleanup());
++
++// handleBookmark only exists inside context — this harness exposes it
++// through a button + a visible watchlist dump so we can assert on it
++// without reaching into React internals.
++function BookmarkHarness({ crop }) {
++  const { watchlist, handleBookmark } = useAppContext();
++  return (
++    <div>
++      <button onClick={() => handleBookmark(crop)}>toggle</button>
++      <span data-testid="watchlist">{JSON.stringify(watchlist)}</span>
++    </div>
++  );
++}
++
++describe('handleBookmark', () => {
++  const crop = { id: 'wheat-punjab', name: 'Punjab Wheat' };
++
++  it('adds the crop id to the watchlist on first call', () => {
++    render(
++      <AppProvider>
++        <BookmarkHarness crop={crop} />
++      </AppProvider>
++    );
++
++    expect(screen.getByTestId('watchlist').textContent).toBe('[]');
++    fireEvent.click(screen.getByText('toggle'));
++    expect(screen.getByTestId('watchlist').textContent).toBe(
++      JSON.stringify([crop.id])
++    );
++  });
++
++  it('removes the crop id on a second call to the same crop (toggle behavior)', () => {
++    render(
++      <AppProvider>
++        <BookmarkHarness crop={crop} />
++      </AppProvider>
++    );
++
++    const button = screen.getByText('toggle');
++    fireEvent.click(button); // add
++    fireEvent.click(button); // remove
++    expect(screen.getByTestId('watchlist').textContent).toBe('[]');
++  });
++});
+diff --git a/src/test/setup.js b/src/test/setup.js
+new file mode 100644
+index 0000000..bb02c60
+--- /dev/null
++++ b/src/test/setup.js
+@@ -0,0 +1 @@
++import '@testing-library/jest-dom/vitest';
+diff --git a/vite.config.js b/vite.config.js
+index 8b0f57b..ed06228 100644
+--- a/vite.config.js
++++ b/vite.config.js
+@@ -4,4 +4,8 @@ import react from '@vitejs/plugin-react'
+ // https://vite.dev/config/
+ export default defineConfig({
+   plugins: [react()],
++  test: {
++    environment: 'jsdom',
++    setupFiles: ['./src/test/setup.js'],
++  },
+ })
