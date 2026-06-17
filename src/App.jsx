@@ -1,9 +1,10 @@
 import './styles/base.css';
 import './styles/HandCursor.css';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { useHandTracking } from './hooks/useHandTracking';
 
 // Layout
 import Nav from './components/Nav/Nav';
@@ -29,7 +30,8 @@ import HomePage     from './pages/HomePage';
 import MarketsPage  from './pages/MarketsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
-//Mobile responsive styles
+// Must load last: contains mobile overrides that need to win the CSS cascade
+// against every component stylesheet imported above.
 import './styles/responsive.css';
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
@@ -47,10 +49,20 @@ class ErrorBoundary extends React.Component {
 // ─── Shared shell (Nav + modals + drawers persist across all routes) ──────────
 function AppShell() {
   const { entered, walletOpen, cropDetail, farmerModal, investorModal } = useAppContext();
+  const cursorRef = useRef(null);
+  const { startHandTracking } = useHandTracking(cursorRef);
 
   return (
     <>
-      {!entered && <IntroOverlay />}
+      {/* Hand cursor — lives at the root, NOT inside IntroOverlay, so it
+          survives the overlay unmounting the instant tracking starts
+          successfully (setEntered(true) fires on the same tick as onLoad). */}
+      <div className="hand-cursor" ref={cursorRef}>
+        <div className="hc-dot"></div>
+        <div className="hc-ring"></div>
+      </div>
+
+      {!entered && <IntroOverlay startHandTracking={startHandTracking} />}
       <Nav />
 
       {/* Page content swaps here */}

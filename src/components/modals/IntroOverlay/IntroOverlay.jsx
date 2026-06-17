@@ -1,17 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useAppContext } from '../../../context/AppContext';
-import { useHandTracking } from '../../../hooks/useHandTracking';
 import './IntroOverlay.css';
 // ─── IntroOverlay (v24) ───────────────────────────────────────────────────────
 // Shows on first load. User can enter with mouse or enable hand tracking
 // via MediaPipe before entering the exchange.
+// The hand cursor element + useHandTracking hook live in App.jsx (the root
+// shell) so the cursor survives after this overlay unmounts on entry.
 
-export default function IntroOverlay() {
+export default function IntroOverlay({ startHandTracking }) {
   const { setEntered } = useAppContext();
   const [handBtnText, setHandBtnText] = useState('USE HAND TRACKING');
   const [handBtnDisabled, setHandBtnDisabled] = useState(false);
-  const cursorRef = useRef(null);
-  const { startHandTracking } = useHandTracking(cursorRef);
 
   const handleMouse = () => setEntered(true);
 
@@ -32,12 +31,6 @@ export default function IntroOverlay() {
 
   return (
     <>
-      {/* Custom hand cursor — always in DOM so tracking can move it */}
-      <div id="hand-cursor" ref={cursorRef}>
-        <div className="hc-dot"></div>
-        <div className="hc-ring"></div>
-      </div>
-
       {/* Overlay */}
       <div className="intro-overlay">
         <div className="intro-box">

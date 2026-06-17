@@ -89,20 +89,16 @@ export function useHandTracking(cursorRef) {
   const startHandTracking = useCallback(async (onLoad, onError) => {
     const s = state.current;
     try {
-      // Dynamically load MediaPipe
-      if (!window.HandLandmarker) {
-        await new Promise((res, rej) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js';
-          script.crossOrigin = 'anonymous';
-          script.onload = res;
-          script.onerror = rej;
-          setTimeout(rej, 20000);
-          document.head.appendChild(script);
-        });
-      }
-
-      const { HandLandmarker, FilesetResolver } = window.vision ?? window;
+      // Dynamically import MediaPipe. This package is shipped as an ES module
+      // (it contains `export` statements internally), so it MUST be loaded
+      // via dynamic import() — not a classic <script src> tag. A classic
+      // script can't parse `export` syntax at all; it throws a SyntaxError
+      // on the first line and silently never defines anything on window,
+      // which is why this used to fail with "Cannot read properties of
+      // undefined (reading 'forVisionTasks')" in every browser, not just one.
+      const { HandLandmarker, FilesetResolver } = await import(
+        /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js'
+      );
       const vision = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
       );
