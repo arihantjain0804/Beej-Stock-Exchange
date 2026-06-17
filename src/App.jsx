@@ -1,5 +1,4 @@
 import './styles/base.css';
-import './styles/responsive.css';
 import './styles/HandCursor.css';
 
 import React from 'react';
@@ -29,6 +28,9 @@ import NotificationsPanel   from './components/modals/NotificationsPanel/Notific
 import HomePage     from './pages/HomePage';
 import MarketsPage  from './pages/MarketsPage';
 import NotFoundPage from './pages/NotFoundPage';
+
+//Mobile responsive styles
+import './styles/responsive.css';
 
 // ─── Error Boundary ───────────────────────────────────────────────────────────
 class ErrorBoundary extends React.Component {
