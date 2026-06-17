@@ -49,6 +49,40 @@
 
   /* Drawers */
   .portfolio-drawer { width: 100%; }
+
+  /* Trade Modal — collapse 3-column terminal to a single stacked column.
+     Reorder so chart + buy/sell form (the actual reason this modal exists)
+     comes first; order book and recent trades follow below. */
+  .tm-header-left { display: none; }
+  .tm-ticker-strip { overflow-x: auto; }
+  .tm-ticker-item { flex: 0 0 130px; max-width: 130px; padding: 0 1rem; }
+  .tm-close { width: 48px; }
+
+  .tm-body {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    overflow-y: auto;
+  }
+  .tm-main { order: 1; }
+  .tm-order-book {
+    order: 2;
+    border-right: none;
+    border-top: 1px solid var(--glass-border-dim);
+  }
+  .tm-recent-trades {
+    order: 3;
+    border-left: none;
+    border-top: 1px solid var(--glass-border-dim);
+    height: 240px;
+  }
+
+  .tm-chart-wrap { flex: none; height: 220px; }
+  .tm-ob-asks { max-height: 150px; }
+  .tm-ob-bids { max-height: 120px; }
+
+  .tm-token-info { flex-wrap: wrap; gap: 0.8rem; }
+  .tm-token-stats { flex-wrap: wrap; gap: 0.8rem; }
+  .tm-tf-tabs { margin-left: 0; }
 }
 
 @media (max-width: 600px) {
@@ -77,4 +111,9 @@
   /* return section */
   .return-cta-wrap { flex-direction: column; align-items: center; }
   .return-cta-wrap button { width: 100%; max-width: 300px; }
+
+  /* Trade Modal — stack price/qty fields on very narrow phones */
+  .tm-form-row { grid-template-columns: 1fr; }
+  .tm-field { border-right: none; border-bottom: 1px solid var(--glass-border-dim); }
+  .tm-field:last-child { border-bottom: none; }
 }
