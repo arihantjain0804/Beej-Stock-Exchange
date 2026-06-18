@@ -8,7 +8,7 @@ import './IntroOverlay.css';
 // shell) so the cursor survives after this overlay unmounts on entry.
 
 export default function IntroOverlay({ startHandTracking }) {
-  const { setEntered } = useAppContext();
+  const { setEntered, showToast } = useAppContext();
   const [handBtnText, setHandBtnText] = useState('USE HAND TRACKING');
   const [handBtnDisabled, setHandBtnDisabled] = useState(false);
 
@@ -18,8 +18,13 @@ export default function IntroOverlay({ startHandTracking }) {
     setHandBtnDisabled(true);
     setHandBtnText('LOADING MODEL...');
     await startHandTracking(
-      // onLoad — tracking started, dismiss overlay
-      () => setEntered(true),
+      // onLoad — tracking started, dismiss overlay, remind the user of the
+      // controls right as they actually start using them (more useful than
+      // only mentioning it once on the intro screen, which is easy to forget)
+      () => {
+        setEntered(true);
+        showToast('Hand Tracking Active', 'Move to look · Fist to click · Hold edge to scroll');
+      },
       // onError — fall back to mouse
       () => {
         setHandBtnText('USE HAND TRACKING');
@@ -52,10 +57,12 @@ export default function IntroOverlay({ startHandTracking }) {
           <p className="intro-desc">
             Where seeds become stocks,<br />and harvests become returns.
           </p>
-          <p className="intro-hand-note">
-            Choose hand tracking to navigate with your index finger.<br />
-            Make a fist to click. Mouse to scroll edges.
-          </p>
+          <div className="intro-controls">
+            <p className="intro-controls-label">Hand Tracking Controls</p>
+            <div className="intro-control-row"><span className="intro-control-key">Move</span> — Point with your index finger</div>
+            <div className="intro-control-row"><span className="intro-control-key">Click</span> — Make a fist</div>
+            <div className="intro-control-row"><span className="intro-control-key">Scroll</span> — Hold near the top or bottom edge</div>
+          </div>
 
           <div className="intro-btns">
             <button className="btn-enter-mouse" onClick={handleMouse}>

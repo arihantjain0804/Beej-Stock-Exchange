@@ -34,5 +34,17 @@
   border-color: rgba(232,200,122,0.6);
 }
 
+/* Scroll feedback — dot grows and glows blue while in an edge scroll zone */
+.hand-cursor[data-scroll="up"] .hc-dot,
+.hand-cursor[data-scroll="down"] .hc-dot {
+  transform: scale(1.3);
+  box-shadow: 0 0 18px #6fa8dc, 0 0 36px rgba(111,168,220,0.5);
+}
+.hand-cursor[data-scroll="up"] .hc-ring,
+.hand-cursor[data-scroll="down"] .hc-ring {
+  width: 38px; height: 38px;
+  border-color: rgba(111,168,220,0.6);
+}
+
 .hand-tracking-active * { cursor:none !important; 
 }

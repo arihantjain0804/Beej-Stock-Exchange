@@ -33,6 +33,8 @@ class OneEuroFilter {
 // ─── useHandTracking Hook ─────────────────────────────────────────────────────
 // Loads MediaPipe HandLandmarker, tracks the index fingertip,
 // moves the custom hand cursor div, and fires click events on fist gestures.
+//
+// Returns: { startHandTracking, stopHandTracking, isTracking }
 export function useHandTracking(cursorRef) {
   const state = useRef({
     handLandmarker: null,
@@ -45,12 +47,48 @@ export function useHandTracking(cursorRef) {
     isFist: false,
     wasFist: false,
     lastFistClick: 0,
+    scrollDirection: null, // 'up' | 'down' | null — for cursor visual feedback
     fxFilter: new OneEuroFilter(0.9, 0.0015),
     fyFilter: new OneEuroFilter(0.9, 0.0015),
   });
 
+  const DEAD_ZONE_TOP = 0.20, DEAD_ZONE_BOTTOM = 0.80, MAX_SCROLL_SPEED = 100;
+
   const RAW_MIN = 0.22, RAW_MAX = 0.78, COOLDOWN = 500;
   const remap = (v) => Math.max(0, Math.min(1, (v - RAW_MIN) / (RAW_MAX - RAW_MIN)));
+
+  const INTERACTIVE_SELECTOR = 'nav, .mobile-bottom-nav, button, a, [role="button"], input, select, textarea';
+  const isOverInteractive = useCallback((px, py) => {
+    const el = document.elementFromPoint(px, py);
+    return !!(el && el.closest(INTERACTIVE_SELECTOR));
+  }, []);
+
+  const updateScroll = useCallback((gazeX, gazeY) => {
+    const s = state.current;
+    const container = document.scrollingElement || document.documentElement;
+
+    if (isOverInteractive(gazeX * window.innerWidth, gazeY * window.innerHeight)) {
+      s.scrollDirection = null;
+      return;
+    }
+
+    let speed = 0;
+    if (gazeY > DEAD_ZONE_BOTTOM) {
+      const intensity = (gazeY - DEAD_ZONE_BOTTOM) / (1 - DEAD_ZONE_BOTTOM);
+      speed = intensity * intensity * MAX_SCROLL_SPEED;
+      s.scrollDirection = 'down';
+    } else if (gazeY < DEAD_ZONE_TOP) {
+      const intensity = (DEAD_ZONE_TOP - gazeY) / DEAD_ZONE_TOP;
+      speed = -intensity * intensity * MAX_SCROLL_SPEED;
+      s.scrollDirection = 'up';
+    } else {
+      s.scrollDirection = null;
+    }
+
+    if (Math.abs(speed) > 0.5) {
+      container.scrollBy(0, speed);
+    }
+  }, [isOverInteractive]);
 
   const updateCursor = useCallback(() => {
     const s = state.current;
@@ -59,6 +97,7 @@ export function useHandTracking(cursorRef) {
     el.style.left = (s.gazeX * 100) + 'vw';
     el.style.top = (s.gazeY * 100) + 'vh';
     el.dataset.fist = s.isFist ? 'true' : 'false';
+    el.dataset.scroll = s.scrollDirection ?? '';
   }, [cursorRef]);
 
   const fireFistClick = useCallback(() => {
@@ -81,12 +120,14 @@ export function useHandTracking(cursorRef) {
       fireFistClick();
     }
     s.wasFist = s.isFist;
+    updateScroll(s.gazeX, s.gazeY);
     updateCursor();
-  }, [fireFistClick, updateCursor]);
+  }, [fireFistClick, updateScroll, updateCursor]);
 
   const startHandTracking = useCallback(async (onLoad, onError) => {
     const s = state.current;
     try {
+
       const { HandLandmarker, FilesetResolver } = await import(
         /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js'
       );
@@ -150,6 +191,7 @@ export function useHandTracking(cursorRef) {
     s.handLandmarker = null;
     s.videoEl = null;
     s.stream = null;
+    s.scrollDirection = null;
     document.body.classList.remove('hand-tracking-active');
     if (cursorRef.current) cursorRef.current.classList.remove('active');
   }, [cursorRef]);

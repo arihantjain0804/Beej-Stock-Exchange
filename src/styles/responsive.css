@@ -59,18 +59,20 @@
   .tm-close { width: 48px; }
 
   .tm-body {
-    grid-template-columns: 1fr;
-    grid-auto-rows: auto;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
   }
-  .tm-main { order: 1; }
+  .tm-main { order: 1; flex: none; }
   .tm-order-book {
     order: 2;
+    flex: none;
     border-right: none;
     border-top: 1px solid var(--glass-border-dim);
   }
   .tm-recent-trades {
     order: 3;
+    flex: none;
     border-left: none;
     border-top: 1px solid var(--glass-border-dim);
     height: 240px;
