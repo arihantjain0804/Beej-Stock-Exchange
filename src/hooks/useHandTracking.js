@@ -33,8 +33,6 @@ class OneEuroFilter {
 // ─── useHandTracking Hook ─────────────────────────────────────────────────────
 // Loads MediaPipe HandLandmarker, tracks the index fingertip,
 // moves the custom hand cursor div, and fires click events on fist gestures.
-//
-// Returns: { startHandTracking, stopHandTracking, isTracking }
 export function useHandTracking(cursorRef) {
   const state = useRef({
     handLandmarker: null,
@@ -47,11 +45,11 @@ export function useHandTracking(cursorRef) {
     isFist: false,
     wasFist: false,
     lastFistClick: 0,
-    fxFilter: new OneEuroFilter(0.4, 0.002),
-    fyFilter: new OneEuroFilter(0.4, 0.002),
+    fxFilter: new OneEuroFilter(0.9, 0.0015),
+    fyFilter: new OneEuroFilter(0.9, 0.0015),
   });
 
-  const RAW_MIN = 0.30, RAW_MAX = 0.70, COOLDOWN = 500;
+  const RAW_MIN = 0.22, RAW_MAX = 0.78, COOLDOWN = 500;
   const remap = (v) => Math.max(0, Math.min(1, (v - RAW_MIN) / (RAW_MAX - RAW_MIN)));
 
   const updateCursor = useCallback(() => {
@@ -89,13 +87,6 @@ export function useHandTracking(cursorRef) {
   const startHandTracking = useCallback(async (onLoad, onError) => {
     const s = state.current;
     try {
-      // Dynamically import MediaPipe. This package is shipped as an ES module
-      // (it contains `export` statements internally), so it MUST be loaded
-      // via dynamic import() — not a classic <script src> tag. A classic
-      // script can't parse `export` syntax at all; it throws a SyntaxError
-      // on the first line and silently never defines anything on window,
-      // which is why this used to fail with "Cannot read properties of
-      // undefined (reading 'forVisionTasks')" in every browser, not just one.
       const { HandLandmarker, FilesetResolver } = await import(
         /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js'
       );
