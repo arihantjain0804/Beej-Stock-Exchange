@@ -1,0 +1,10 @@
+const jwt = require('jsonwebtoken');
+const ACCESS_SECRET = process.env.JWT_SECRET || 'bse-dev-secret';
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'bse-refresh-secret';
+const ACCESS_TTL = process.env.JWT_EXPIRES_IN || '7d';
+const REFRESH_TTL = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+const signAccess = (payload) => jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_TTL });
+const signRefresh = (payload) => jwt.sign(payload, REFRESH_SECRET, { expiresIn: REFRESH_TTL });
+const verifyAccess = (token) => jwt.verify(token, ACCESS_SECRET);
+const verifyRefresh = (token) => jwt.verify(token, REFRESH_SECRET);
+module.exports = { signAccess, signRefresh, verifyAccess, verifyRefresh };

@@ -1,0 +1,8 @@
+require('dotenv').config();
+const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+const isFresh = process.argv.includes('--fresh');
+const pool = new Pool({ host: process.env.DB_HOST, port: parseInt(process.env.DB_PORT)||5432, database: process.env.DB_NAME, user: process.env.DB_USER, password: process.env.DB_PASSWORD });
+async function run() { const client = await pool.connect(); try { if(isFresh){ console.log('Dropping all tables...'); await client.query(`DROP TABLE IF EXISTS contract_events,notifications,price_alerts,watchlist,transactions,trades,orders,portfolio_holdings,beej50_history,price_candles,price_history,crop_tokens,farmer_profiles,users CASCADE; DROP TYPE IF EXISTS user_role,user_kyc,crop_status,order_side,order_type,order_status,tx_type,alert_type,alert_status,notification_type CASCADE;`); } await client.query(`CREATE TABLE IF NOT EXISTS _migrations (id SERIAL PRIMARY KEY, name VARCHAR(255) UNIQUE NOT NULL, run_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`); const migDir = path.join(__dirname); const files = fs.readdirSync(migDir).filter(f=>f.endsWith('.sql')).sort(); for(const file of files){ const {rows} = await client.query('SELECT id FROM _migrations WHERE name=$1',[file]); if(rows.length){console.log(`Already run: ${file}`);continue;} const sql = fs.readFileSync(path.join(migDir,file),'utf8'); console.log(`Running: ${file}`); await client.query(sql); await client.query('INSERT INTO _migrations (name) VALUES ($1)',[file]); console.log(`Done: ${file}`); } console.log('All migrations complete.'); } catch(err){ console.error('Migration failed:',err.message); process.exit(1); } finally { client.release(); await pool.end(); } }
+run();

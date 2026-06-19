@@ -1,0 +1,6 @@
+const { query } = require('../config/database');
+const { getCache, setCache } = require('../config/redis');
+const { success } = require('../utils/response');
+const getIndex = async (req, res) => { const cached = await getCache('beej50:current'); if (cached) return success(res, cached); const { rows: latest } = await query('SELECT * FROM beej50_history ORDER BY recorded_at DESC LIMIT 1'); const { rows: constituents } = await query(`SELECT ct.symbol,ct.name,ct.crop_type,ct.current_price_inr,ct.prev_close_inr,ct.expected_yield_pct,((ct.current_price_inr-ct.prev_close_inr)/ct.prev_close_inr*100) AS change_pct FROM crop_tokens ct WHERE ct.is_beej50=true AND ct.status IN ('active','harvested') ORDER BY ct.current_price_inr DESC`); const data = { value: parseFloat(latest[0]?.value||11240), change_pct: parseFloat(latest[0]?.change_pct||0), recorded_at: latest[0]?.recorded_at, constituents }; await setCache('beej50:current', data, 15); return success(res, data); };
+const getHistory = async (req, res) => { const days = Math.min(parseInt(req.query.days||30),365); const { rows } = await query(`SELECT value,change_pct,recorded_at FROM beej50_history WHERE recorded_at > NOW() - INTERVAL '${days} days' ORDER BY recorded_at ASC`); return success(res, rows); };
+module.exports = { getIndex, getHistory };

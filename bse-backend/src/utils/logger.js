@@ -1,0 +1,10 @@
+const { createLogger, format, transports } = require('winston');
+const path = require('path');
+const fs = require('fs');
+const logDir = process.env.LOG_DIR || './logs';
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+const { combine, timestamp, printf, colorize, errors, json } = format;
+const devFormat = combine(colorize(), timestamp({ format: 'HH:mm:ss' }), errors({ stack: true }), printf(({ level, message, timestamp, stack, ...meta }) => { const metaStr = Object.keys(meta).length ? ' ' + JSON.stringify(meta) : ''; return `${timestamp} [${level}] ${message}${metaStr}${stack ? '\n' + stack : ''}`; }));
+const prodFormat = combine(timestamp(), errors({ stack: true }), json());
+const logger = createLogger({ level: process.env.LOG_LEVEL || 'info', format: process.env.NODE_ENV === 'production' ? prodFormat : devFormat, transports: [ new transports.Console(), new transports.File({ filename: path.join(logDir, 'error.log'), level: 'error', format: combine(timestamp(), json()) }), new transports.File({ filename: path.join(logDir, 'combined.log'), format: combine(timestamp(), json()) }) ] });
+module.exports = logger;

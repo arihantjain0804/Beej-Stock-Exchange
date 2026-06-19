@@ -1,0 +1,6 @@
+const { query } = require('../config/database');
+const { success } = require('../utils/response');
+const getNotifications = async (req, res) => { const { unread, page=1, limit=30 } = req.query; const params = [req.user.sub]; const conditions = ['user_id=$1']; if (unread==='true') conditions.push('is_read=false'); const where = conditions.join(' AND '); const offset = (parseInt(page)-1)*parseInt(limit); params.push(parseInt(limit), offset); const { rows } = await query(`SELECT * FROM notifications WHERE ${where} ORDER BY created_at DESC LIMIT $${params.length-1} OFFSET $${params.length}`, params); const countRes = await query(`SELECT COUNT(*) FROM notifications WHERE user_id=$1 AND is_read=false`, [req.user.sub]); return success(res, rows, { unread_count: parseInt(countRes.rows[0].count) }); };
+const markAllRead = async (req, res) => { await query('UPDATE notifications SET is_read=true WHERE user_id=$1 AND is_read=false', [req.user.sub]); return success(res, { message: 'All notifications marked as read' }); };
+const markRead = async (req, res) => { await query('UPDATE notifications SET is_read=true WHERE id=$1 AND user_id=$2', [req.params.id, req.user.sub]); return success(res, { id: req.params.id }); };
+module.exports = { getNotifications, markAllRead, markRead };

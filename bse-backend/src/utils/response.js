@@ -1,0 +1,10 @@
+const success = (res, data = {}, meta = {}, status = 200) => res.status(status).json({ success: true, data, ...(Object.keys(meta).length ? { meta } : {}) });
+const created = (res, data = {}) => success(res, data, {}, 201);
+const paginated = (res, rows, { page, limit, total }) => success(res, rows, { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / limit) });
+const error = (res, message, status = 400, code = 'BAD_REQUEST', details = null) => res.status(status).json({ success: false, error: { code, message, ...(details ? { details } : {}) } });
+const notFound = (res, entity = 'Resource') => error(res, `${entity} not found`, 404, 'NOT_FOUND');
+const unauthorized = (res, message = 'Unauthorized') => error(res, message, 401, 'UNAUTHORIZED');
+const forbidden = (res, message = 'Forbidden') => error(res, message, 403, 'FORBIDDEN');
+const serverError = (res, message = 'Internal server error') => error(res, message, 500, 'SERVER_ERROR');
+const validationError = (res, details) => error(res, 'Validation failed', 422, 'VALIDATION_ERROR', details);
+module.exports = { success, created, paginated, error, notFound, unauthorized, forbidden, serverError, validationError };
