@@ -231,7 +231,7 @@
   border: none; border-bottom: 2px solid transparent;
   font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
   letter-spacing: 0.15em; cursor: pointer; transition: all 0.2s;
-  color: var(--straw-dim); opacity: 0.4;
+  color: var(--straw); opacity: 0.7;
 }
 .tm-side-btn.buy.active  { color: #6daf4a; border-bottom-color: #6daf4a; opacity: 1; background: rgba(109,175,74,0.06); }
 .tm-side-btn.sell.active { color: #c04030; border-bottom-color: #c04030; opacity: 1; background: rgba(192,64,48,0.06); }
@@ -246,7 +246,7 @@
 .tm-field:last-child { border-right: none; }
 .tm-field-label {
   font-family: 'JetBrains Mono', monospace; font-size: 0.42rem;
-  letter-spacing: 0.12em; color: var(--straw-dim); opacity: 0.4;
+  letter-spacing: 0.12em; color: var(--straw); opacity: 0.7;
   text-transform: uppercase; display: block; margin-bottom: 0.35rem;
 }
 .tm-field-input-wrap {
@@ -254,21 +254,21 @@
 }
 .tm-field-prefix, .tm-field-suffix {
   font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
-  color: var(--straw-dim); opacity: 0.4;
+  color: var(--straw); opacity: 0.7;
 }
 .tm-field-input {
   background: none; border: none; outline: none;
   font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
   color: var(--grain); width: 100%;
 }
-.tm-field-input::placeholder { color: var(--straw-dim); opacity: 0.3; }
+.tm-field-input::placeholder { color: var(--straw); opacity: 0.7; }
 .tm-order-total {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 0.5rem 1rem; border-top: 1px solid var(--glass-border-dim);
+  padding: 0.5rem 1rem; border-top: 1px solid var(--glass-border);
 }
 .tm-order-total-label {
   font-family: 'JetBrains Mono', monospace; font-size: 0.48rem;
-  letter-spacing: 0.12em; color: var(--straw-dim); opacity: 0.4; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--straw); opacity: 0.7; text-transform: uppercase;
 }
 .tm-order-total-val {
   font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--grain);
