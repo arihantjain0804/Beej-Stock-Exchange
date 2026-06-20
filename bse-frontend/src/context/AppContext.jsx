@@ -1,6 +1,10 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { TOKENS, seedPrices } from '../data/tokens';
 import { useLivePrices } from '../hooks/useLivePrices';
+import {
+  authApi, portfolioApi,
+  watchlistApi, notificationsApi,
+} from '../api/index';
+import { tokenStore } from '../api/client';
 
 // ─── Context Definition ───────────────────────────────────────────────────────
 const AppContext = createContext(null);
