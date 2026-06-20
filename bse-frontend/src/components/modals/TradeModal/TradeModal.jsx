@@ -278,6 +278,8 @@ export default function TradeModal() {
     setQty('');
   }, [activeToken.symbol]);
 
+  const [orderLoading, setOrderLoading] = useState(false);
+
   if (!tradeOpen) return null;
 
   const history = histories[activeToken.symbol]?.[tf] || [];
@@ -287,16 +289,15 @@ export default function TradeModal() {
   const isUp = change >= 0;
   const orderTotal = price && qty ? (parseFloat(price) * parseFloat(qty)).toFixed(2) : '0.00';
 
-  const [orderLoading, setOrderLoading] = useState(false);
 
   const handlePlaceOrder = async () => {
     if (!qty || parseFloat(qty) <= 0) return;
     const p = price || livePrice.toFixed(2);
 
-    if (!connected) {
-      setWalletOpen(true);
-      return;
-    }
+    // if (!connected) {
+    //   setWalletOpen(true);
+    //   return;
+    // }
 
     const orderType = price ? 'limit' : 'market';
 

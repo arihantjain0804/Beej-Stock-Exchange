@@ -69,7 +69,7 @@
 }
 .tm-ticker-name {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.44rem; letter-spacing: 0.08em; color: var(--straw-dim); opacity: 0.5;
+  font-size: 0.44rem; letter-spacing: 0.08em; color: var(--straw); opacity: 0.8;
 }
 .tm-ticker-price {
   font-family: 'JetBrains Mono', monospace;
@@ -85,8 +85,8 @@
   flex-shrink: 0;
   background: none;
   border: none;
-  color: var(--straw-dim);
-  opacity: 0.7;
+  color: var(--straw);
+  opacity: 0.9;
   font-size: 1.1rem;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -104,7 +104,7 @@
 .tm-panel-title {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.52rem; letter-spacing: 0.22em; text-transform: uppercase;
-  color: var(--straw-dim); opacity: 0.7;
+  color: var(--straw); opacity: 0.8;
   padding: 0.8rem 1rem; border-bottom: 1px solid var(--glass-border-dim);
 }
 
@@ -118,7 +118,7 @@
   padding: 0.4rem 1rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.44rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--straw-dim); opacity: 0.7;
+  color: var(--straw); opacity: 0.8;
   border-bottom: 1px solid var(--glass-border-dim);
 }
 .tm-ob-asks, .tm-ob-bids { flex: 1; overflow: hidden; }
@@ -149,7 +149,7 @@
 .tm-ob-mid-chg.dn { color: #c04030; }
 .tm-ob-mid-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.42rem; letter-spacing: 0.1em; color: var(--straw-dim); opacity: 0.7;
+  font-size: 0.42rem; letter-spacing: 0.1em; color: var(--straw); opacity: 0.7;
   margin-top: 0.2rem;
 }
 
@@ -171,16 +171,16 @@
 .tm-live-price.dn { color: #c04030; }
 .tm-token-sym {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.5rem; letter-spacing: 0.12em; color: var(--straw-dim); opacity: 0.5;
+  font-size: 0.5rem; letter-spacing: 0.12em; color: var(--straw); opacity: 0.6;
 }
 .tm-token-stats { display: flex; gap: 2rem; }
 .tm-stat { display: flex; flex-direction: column; gap: 0.15rem; }
 .tm-stat-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.42rem; letter-spacing: 0.12em; color: var(--straw-dim); opacity: 0.7; text-transform: uppercase;
+  font-size: 0.42rem; letter-spacing: 0.12em; color: var(--straw); opacity: 0.8; text-transform: uppercase;
 }
 .tm-stat-val {
-  font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--straw-dim); opacity: 0.7;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--straw); opacity: 0.8;
 }
 .tm-tf-tabs { display: flex; gap: 0.3rem; margin-left: auto; }
 .tm-tf-btn {
@@ -231,11 +231,11 @@
   border: none; border-bottom: 2px solid transparent;
   font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
   letter-spacing: 0.15em; cursor: pointer; transition: all 0.2s;
-  color: var(--straw); opacity: 0.7;
+  color: var(--straw); opacity: 0.5;
 }
 .tm-side-btn.buy.active  { color: #6daf4a; border-bottom-color: #6daf4a; opacity: 1; background: rgba(109,175,74,0.06); }
 .tm-side-btn.sell.active { color: #c04030; border-bottom-color: #c04030; opacity: 1; background: rgba(192,64,48,0.06); }
-.tm-side-btn:hover { opacity: 0.8; }
+.tm-side-btn:hover { opacity: 1; }
 .tm-form-row {
   display: grid; grid-template-columns: 1fr 1fr;
   border-top: 1px solid var(--glass-border-dim);
@@ -292,7 +292,7 @@
   padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--glass-border-dim);
   font-family: 'JetBrains Mono', monospace; font-size: 0.44rem;
   letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--straw-dim); opacity: 0.7;
+  color: var(--straw); opacity: 0.7;
 }
 .tm-rt-list { flex: 1; overflow-y: auto; }
 .tm-rt-list::-webkit-scrollbar { width: 2px; }
