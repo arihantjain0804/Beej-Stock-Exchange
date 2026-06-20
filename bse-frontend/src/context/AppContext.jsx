@@ -1,3 +1,7 @@
+import {
+  createContext, useContext, useState,
+  useCallback, useEffect, useRef,
+} from 'react';
 import { TOKENS, seedPrices } from '../data/tokens';
 import { useLivePrices } from '../hooks/useLivePrices';
 import {
@@ -9,39 +13,46 @@ import { tokenStore } from '../api/client';
 // ─── Context Definition ───────────────────────────────────────────────────────
 const AppContext = createContext(null);
 
-const INITIAL_NOTIFS = [
-  { id: 1, type: 'harvest', icon: '🌾', unread: true, title: 'Punjab Wheat harvest settlement', desc: 'Smart contract settlement initiated · ₹8,40,000 distribution in progress', time: '2 min ago', tag: 'harvest', harvestPct: 94 },
-  { id: 2, type: 'alert', icon: '📈', unread: true, title: 'Price alert triggered: KRS-RCE', desc: 'Krishna Rice crossed ₹520 target · Current price ₹523.40', time: '18 min ago', tag: 'alert' },
-  { id: 3, type: 'trade', icon: '💱', unread: true, title: 'Order filled — VDB-SOY', desc: 'BUY 532 tokens @ ₹625.02 · Total ₹3,32,510.64', time: '1 hour ago', tag: 'trade' },
-  { id: 4, type: 'kyc', icon: '✅', unread: false, title: 'KYC verification complete', desc: 'Your identity documents have been verified · Full trading access enabled', time: '3 hours ago', tag: 'kyc' },
-  { id: 5, type: 'harvest', icon: '🌱', unread: false, title: 'Vidarbha Soy — season update', desc: 'Crop progress report: 67% funded · Agronomist confirms healthy growth', time: '5 hours ago', tag: 'harvest', harvestPct: 67 },
-  { id: 6, type: 'alert', icon: '🔔', unread: false, title: 'Watchlist: PNJ-WHT near target', desc: 'Punjab Wheat is within 3% of your ₹900 price alert', time: 'Yesterday', tag: 'alert' },
-  { id: 7, type: 'system', icon: '📋', unread: false, title: 'New crop listing: AP-TRM', desc: 'Andhra Pradesh Turmeric is now available · Rabi season · 19.2% projected return', time: 'Yesterday', tag: 'system' },
-  { id: 8, type: 'trade', icon: '💰', unread: false, title: 'Dividend distributed — MH-CTN', desc: 'Mid-season distribution of ₹4,200 credited to your wallet', time: '2 days ago', tag: 'trade' },
-];
+// Maps backend notification type → emoji icon
+const NOTIF_ICONS = {
+  harvest: '🌾', alert: '🔔', trade: '💱', kyc: '✅',
+  system: '📋', dividend: '💰', price_alert: '📈',
+};
+function iconForType(type) { return NOTIF_ICONS[type] || '📋'; }
 
 // ─── Provider Component ───────────────────────────────────────────────────────
 export function AppProvider({ children }) {
-  // Intro
+  // ── Intro ─────────────────────────────────────────────────────────────────
   const [entered, setEntered] = useState(false);
 
-  // Live token prices
+  // ── Token prices ──────────────────────────────────────────────────────────
   const [tokens, setTokens] = useState(() => seedPrices(TOKENS));
   useLivePrices(setTokens);
 
-  // Wallet
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
+
+  // ── Wallet / Connection ───────────────────────────────────────────────────
   const [walletOpen, setWalletOpen] = useState(false);
   const [connected, setConnected] = useState(false);
   const [walletAddr, setWalletAddr] = useState('');
 
-  // Drawers
+  // ── Drawers ───────────────────────────────────────────────────────────────
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [watchlistOpen, setWatchlistOpen] = useState(false);
 
-  // Watchlist
-  const [watchlist, setWatchlist] = useState([]);
+  // ── Portfolio ─────────────────────────────────────────────────────────────
+  const [portfolio, setPortfolio] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
 
-  // Modals
+  // ── Watchlist ─────────────────────────────────────────────────────────────
+  const [watchlist, setWatchlist] = useState([]);
+  const [watchlistItems, setWatchlistItems] = useState([]);
+
+  // ── Modals ────────────────────────────────────────────────────────────────
   const [cropDetail, setCropDetail] = useState(null);
   const [farmerModal, setFarmerModal] = useState(false);
   const [investorModal, setInvestorModal] = useState(false);
@@ -49,17 +60,87 @@ export function AppProvider({ children }) {
   const [priceAlertsOpen, setPriceAlertsOpen] = useState(false);
   const [yieldCalcOpen, setYieldCalcOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState(INITIAL_NOTIFS);
+
+  // ── Notifications ─────────────────────────────────────────────────────────
+  const [notifs, setNotifs] = useState([]);
+  const [notifsLoading, setNotifsLoading] = useState(false);
   const unreadCount = notifs.filter(n => n.unread).length;
 
-  // Toast notification
+  // ── Toast ─────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState({ show: false, title: '', detail: '' });
 
-  // ─── Escape key closes the topmost open modal/drawer ───────────────────────
-  // Order is a best-effort approximation of stacking (e.g. WalletModal and
-  // PriceAlertsModal can be opened on top of another open surface) — there is
-  // no real z-index/open-order tracking, so this assumes only one likely
-  // "topmost" surface is open at a time in practice.
+  // ─── Restore session on mount ─────────────────────────────────────────────
+  const sessionRestored = useRef(false);
+  useEffect(() => {
+    if (sessionRestored.current) return;
+    sessionRestored.current = true;
+
+    const hasToken = !!tokenStore.getAccess() || !!tokenStore.getRefresh();
+    if (!hasToken) return;
+
+    authApi.getMe()
+      .then(res => {
+        setUser(res.data);
+        setConnected(true);
+        setWalletAddr(res.data.phone || '');
+      })
+      .catch(() => {
+        tokenStore.clear();
+      });
+  }, []);
+
+  // ─── Fetch portfolio when drawer opens ────────────────────────────────────
+  useEffect(() => {
+    if (!portfolioOpen || !user) return;
+    setPortfolioLoading(true);
+    Promise.all([
+      portfolioApi.get(),
+      portfolioApi.transactions({ limit: 20 }),
+    ])
+      .then(([pfRes, txRes]) => {
+        setPortfolio(pfRes.data);
+        setTransactions(txRes.data || []);
+      })
+      .catch(err => console.error('Portfolio fetch failed', err))
+      .finally(() => setPortfolioLoading(false));
+  }, [portfolioOpen, user]);
+
+  // ─── Fetch watchlist when user logs in ────────────────────────────────────
+  const fetchWatchlist = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await watchlistApi.get();
+      const rows = res.data || [];
+      setWatchlistItems(rows);
+      setWatchlist(rows.map(r => r.symbol));
+    } catch (err) {
+      console.error('Watchlist fetch failed', err);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchWatchlist();
+  }, [fetchWatchlist]);
+
+  // ─── Fetch notifications when panel opens ─────────────────────────────────
+  useEffect(() => {
+    if (!notifOpen || !user) return;
+    setNotifsLoading(true);
+    notificationsApi.get({ limit: 30 })
+      .then(res => {
+        const rows = (res.data || []).map(n => ({
+          ...n,
+          unread: !n.is_read,
+          icon: iconForType(n.type),
+          tag: n.type,
+        }));
+        setNotifs(rows);
+      })
+      .catch(err => console.error('Notifs fetch failed', err))
+      .finally(() => setNotifsLoading(false));
+  }, [notifOpen, user]);
+
+  // ─── Escape key ───────────────────────────────────────────────────────────
   useEffect(() => {
     function handleEscape(e) {
       if (e.key !== 'Escape') return;
@@ -81,15 +162,21 @@ export function AppProvider({ children }) {
     tradeOpen, farmerModal, cropDetail, watchlistOpen, portfolioOpen,
   ]);
 
-  // ─── Handlers ──────────────────────────────────────────────────────────────
+  // ─── Handlers ─────────────────────────────────────────────────────────────
   const showToast = useCallback((title, detail) => {
     setToast({ show: true, title, detail });
     setTimeout(() => setToast(t => ({ ...t, show: false })), 3500);
   }, []);
 
-  const handleConnect = useCallback((method, addr) => {
+  const handleConnect = useCallback((method, addr, authResult) => {
+    if (authResult) {
+      tokenStore.set(authResult.tokens.access, authResult.tokens.refresh);
+      setUser(authResult.user);
+      setWalletAddr(authResult.user.phone || addr);
+    } else {
+      setWalletAddr(addr);
+    }
     setConnected(true);
-    setWalletAddr(addr);
     setTimeout(() => {
       setWalletOpen(false);
       setPortfolioOpen(true);
@@ -97,17 +184,48 @@ export function AppProvider({ children }) {
     }, 1200);
   }, [showToast]);
 
-  const handleBookmark = useCallback((crop) => {
-    setWatchlist(prev => {
-      if (prev.includes(crop.id)) {
-        showToast('Removed from Watchlist', crop.name);
-        return prev.filter(id => id !== crop.id);
-      } else {
+  const handleLogout = useCallback(() => {
+    authApi.logout();
+    setUser(null);
+    setConnected(false);
+    setWalletAddr('');
+    setPortfolio(null);
+    setTransactions([]);
+    setWatchlist([]);
+    setWatchlistItems([]);
+    setNotifs([]);
+    showToast('Logged out', 'Session ended');
+  }, [showToast]);
+
+  const handleBookmark = useCallback(async (crop) => {
+    if (user) {
+      const symbol = crop.tokenSymbol || crop.symbol || crop.id?.toUpperCase();
+      const alreadyIn = watchlist.includes(symbol);
+      try {
+        if (alreadyIn) {
+          await watchlistApi.remove(symbol);
+          setWatchlist(prev => prev.filter(s => s !== symbol));
+          setWatchlistItems(prev => prev.filter(r => r.symbol !== symbol));
+          showToast('Removed from Watchlist', crop.name);
+        } else {
+          await watchlistApi.add(symbol);
+          await fetchWatchlist();
+          showToast('Added to Watchlist', crop.name);
+        }
+      } catch (err) {
+        showToast('Watchlist Error', err.message);
+      }
+    } else {
+      setWatchlist(prev => {
+        if (prev.includes(crop.id)) {
+          showToast('Removed from Watchlist', crop.name);
+          return prev.filter(id => id !== crop.id);
+        }
         showToast('Added to Watchlist', crop.name);
         return [...prev, crop.id];
-      }
-    });
-  }, [showToast]);
+      });
+    }
+  }, [user, watchlist, fetchWatchlist, showToast]);
 
   const handleInvest = useCallback((crop) => {
     if (!connected) {
@@ -120,21 +238,51 @@ export function AppProvider({ children }) {
     }
   }, [connected, showToast]);
 
-  const removeFromWatchlist = useCallback((id) => {
-    setWatchlist(prev => prev.filter(x => x !== id));
+  const removeFromWatchlist = useCallback(async (symbolOrId) => {
+    if (user) {
+      try {
+        await watchlistApi.remove(symbolOrId);
+        setWatchlist(prev => prev.filter(s => s !== symbolOrId));
+        setWatchlistItems(prev => prev.filter(r => r.symbol !== symbolOrId));
+      } catch (err) {
+        showToast('Error', err.message);
+      }
+    } else {
+      setWatchlist(prev => prev.filter(x => x !== symbolOrId));
+    }
+  }, [user, showToast]);
+
+  const markNotifRead = useCallback(async (id) => {
+    try {
+      await notificationsApi.markRead(id);
+      setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true, unread: false } : n));
+    } catch { /* silent */ }
   }, []);
 
-  // ─── Context Value ──────────────────────────────────────────────────────────
+  const markAllNotifsRead = useCallback(async () => {
+    try {
+      await notificationsApi.markAllRead();
+      setNotifs(prev => prev.map(n => ({ ...n, is_read: true, unread: false })));
+    } catch { /* silent */ }
+  }, []);
+
+  // ─── Context Value ─────────────────────────────────────────────────────────
   const value = {
-    // State
     entered, setEntered,
     tokens,
+    user,
+    authLoading, setAuthLoading,
+    authError, setAuthError,
     connected,
     walletAddr,
     walletOpen, setWalletOpen,
     portfolioOpen, setPortfolioOpen,
     watchlistOpen, setWatchlistOpen,
+    portfolio,
+    transactions,
+    portfolioLoading,
     watchlist,
+    watchlistItems,
     cropDetail, setCropDetail,
     farmerModal, setFarmerModal,
     investorModal, setInvestorModal,
@@ -142,15 +290,19 @@ export function AppProvider({ children }) {
     priceAlertsOpen, setPriceAlertsOpen,
     yieldCalcOpen, setYieldCalcOpen,
     notifOpen, setNotifOpen,
-    notifs, setNotifs, unreadCount,
+    notifs, setNotifs,
+    notifsLoading,
+    unreadCount,
     toast,
-
-    // Handlers
     showToast,
     handleConnect,
+    handleLogout,
     handleBookmark,
     handleInvest,
     removeFromWatchlist,
+    fetchWatchlist,
+    markNotifRead,
+    markAllNotifsRead,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
