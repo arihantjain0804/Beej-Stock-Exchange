@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { BSI_CONSTITUENTS } from '../../../data/tokens';
+import { ordersApi } from '../../../api/index';
 import './TradeModal.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -212,7 +213,7 @@ function DepthChart({ orderBook }) {
 
 // ─── Main TradeModal ──────────────────────────────────────────────────────────
 export default function TradeModal() {
-  const { tradeOpen, setTradeOpen, showToast } = useAppContext();
+  const { tradeOpen, setTradeOpen, showToast, connected, setWalletOpen } = useAppContext();
 
   const [activeToken, setActiveToken] = useState(BSI_CONSTITUENTS[2]); // VDB-SOY default
   const [tf, setTf] = useState('1D');
@@ -286,21 +287,45 @@ export default function TradeModal() {
   const isUp = change >= 0;
   const orderTotal = price && qty ? (parseFloat(price) * parseFloat(qty)).toFixed(2) : '0.00';
 
-  const handlePlaceOrder = () => {
+  const [orderLoading, setOrderLoading] = useState(false);
+
+  const handlePlaceOrder = async () => {
     if (!qty || parseFloat(qty) <= 0) return;
     const p = price || livePrice.toFixed(2);
-    showToast(
-      `Order ${side === 'BUY' ? 'Filled ✓' : 'Placed'}`,
-      `${activeToken.symbol} ${side} ₹${p} × ${qty} tokens · Total ₹${(parseFloat(p) * parseFloat(qty)).toLocaleString('en-IN')}`
-    );
-    setRecentTrades(prev => [{
-      price: parseFloat(parseFloat(p).toFixed(2)),
-      qty: parseInt(qty),
-      side,
-      time: new Date().toTimeString().slice(0, 8),
-    }, ...prev.slice(0, 24)]);
-    setQty('');
-    setPrice('');
+
+    if (!connected) {
+      setWalletOpen(true);
+      return;
+    }
+
+    const orderType = price ? 'limit' : 'market';
+
+    setOrderLoading(true);
+    try {
+      await ordersApi.place({
+        symbol:    activeToken.symbol,
+        side:      side.toLowerCase(),
+        type:      orderType,
+        quantity:  parseInt(qty),
+        price_inr: orderType === 'limit' ? parseFloat(p) : undefined,
+      });
+      showToast(
+        `Order ${side === 'BUY' ? 'Filled ✓' : 'Placed'}`,
+        `${activeToken.symbol} ${side} ₹${p} × ${qty} tokens · Total ₹${(parseFloat(p) * parseFloat(qty)).toLocaleString('en-IN')}`
+      );
+      setRecentTrades(prev => [{
+        price: parseFloat(parseFloat(p).toFixed(2)),
+        qty:   parseInt(qty),
+        side,
+        time:  new Date().toTimeString().slice(0, 8),
+      }, ...prev.slice(0, 24)]);
+      setQty('');
+      setPrice('');
+    } catch (err) {
+      showToast('Order Failed', err.message || 'Please try again');
+    } finally {
+      setOrderLoading(false);
+    }
   };
 
   return (
@@ -464,8 +489,9 @@ export default function TradeModal() {
               <button
                 className={`tm-place-btn ${side === 'BUY' ? 'buy' : 'sell'}`}
                 onClick={handlePlaceOrder}
+                disabled={orderLoading}
               >
-                PLACE {side} ORDER →
+                {orderLoading ? 'PLACING…' : `PLACE ${side} ORDER →`}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-# Beej — Crop Token Exchange
+# Beej-Srock-Exchange — Crop Token Exchange
 
 A frontend trading-platform simulation that lets users buy, sell, and track tokenized Indian agricultural commodities (wheat, rice, cotton, mustard, and more) the way a stock exchange app handles equities. Built as a React + Vite single-page app.
 
