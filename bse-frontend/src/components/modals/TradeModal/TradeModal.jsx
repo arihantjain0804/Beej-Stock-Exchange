@@ -294,10 +294,10 @@ export default function TradeModal() {
     if (!qty || parseFloat(qty) <= 0) return;
     const p = price || livePrice.toFixed(2);
 
-    // if (!connected) {
-    //   setWalletOpen(true);
-    //   return;
-    // }
+    if (!connected) {
+      setWalletOpen(true);
+      return;
+    }
 
     const orderType = price ? 'limit' : 'market';
 

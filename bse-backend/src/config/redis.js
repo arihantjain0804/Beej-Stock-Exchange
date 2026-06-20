@@ -1,6 +1,14 @@
 const Redis = require('ioredis');
 const logger = require('../utils/logger');
-const redisConfig = { host: process.env.REDIS_HOST || 'localhost', port: parseInt(process.env.REDIS_PORT) || 6379, password: process.env.REDIS_PASSWORD || undefined, db: parseInt(process.env.REDIS_DB) || 0, retryStrategy: (times) => Math.min(times * 100, 3000), lazyConnect: true };
+const redisConfig = {
+  host: process.env.REDIS_HOST || 'localhost',
+  port: parseInt(process.env.REDIS_PORT) || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
+  db: parseInt(process.env.REDIS_DB) || 0,
+  tls: process.env.REDIS_HOST?.includes('upstash.io') ? {} : undefined,
+  retryStrategy: (times) => Math.min(times * 100, 3000),
+  lazyConnect: true,
+};
 const client = new Redis(redisConfig);
 const subscriber = new Redis(redisConfig);
 client.on('connect', () => logger.info('Redis: connected'));
