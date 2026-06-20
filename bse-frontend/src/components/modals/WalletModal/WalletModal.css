@@ -248,8 +248,8 @@
 
 .wm-option-arrow {
   font-size: 0.7rem;
-  color: var(--straw-dim);
-  opacity: 0.3;
+  color: var(--straw);
+  opacity: 0.6;
   transition: all 0.25s;
   position: relative;
   z-index: 1;

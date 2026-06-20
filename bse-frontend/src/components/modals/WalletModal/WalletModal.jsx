@@ -168,7 +168,7 @@ export default function WalletModal() {
                   </button>
                 </div>
                 {devOtp && (
-                  <p style={{ color: 'var(--harvest)', fontSize: '0.72rem', marginTop: '6px', paddingLeft: '2px' }}>
+                  <p style={{ color: 'var(--harvest)', fontSize: '0.8rem', marginTop: '8px', paddingLeft: '2px' }}>
                     DEV MODE — Your OTP is: <strong>{devOtp}</strong>
                   </p>
                 )}
