@@ -4,8 +4,8 @@ async function matchOrder(tx, order, token) {
   if (order.type !== 'limit') return;
   if (order.status === 'filled') return;
 
-  const isBuy          = order.side === 'buy';
-  const oppSide        = isBuy ? 'sell' : 'buy';
+  const isBuy          = order.side === 'secondary_buy';
+  const oppSide        = isBuy ? 'secondary_sell' : 'secondary_buy';
   const priceCondition = isBuy ? `price_inr <= $2` : `price_inr >= $2`;
   const priceOrder     = isBuy ? 'ASC' : 'DESC';
 
@@ -86,7 +86,7 @@ async function matchOrder(tx, order, token) {
     await tx.query(
       `INSERT INTO transactions
          (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
-       VALUES ($1,'buy',$2,$3,$4,$5,$6,$7)`,
+       VALUES ($1,'secondary_buy',$2,$3,$4,$5,$6,$7)`,
       [buyerId, fillValue, token.id, fillQty, order.id,
        `BUY ${fillQty} tokens @ ₹${fillPrice.toFixed(2)} (matched)`,
        buyerBalRes.rows[0].wallet_balance]
@@ -95,7 +95,7 @@ async function matchOrder(tx, order, token) {
     await tx.query(
       `INSERT INTO transactions
          (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
-       VALUES ($1,'sell',$2,$3,$4,$5,$6,$7)`,
+       VALUES ($1,'secondary_sell',$2,$3,$4,$5,$6,$7)`,
       [sellerId, fillValue, token.id, fillQty, counter.id,
        `SELL ${fillQty} tokens @ ₹${fillPrice.toFixed(2)} (matched)`,
        sellerBalRes.rows[0].wallet_balance]

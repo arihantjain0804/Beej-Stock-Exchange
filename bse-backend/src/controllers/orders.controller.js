@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
 
 const placeOrderValidation = [
   body('symbol').notEmpty(),
-  body('side').isIn(['buy', 'sell']),
+  body('side').isIn(['secondary_buy', 'secondary_sell']),
   body('type').isIn(['market', 'limit']),
   body('quantity').isInt({ min: 1 }),
   validate,
@@ -33,7 +33,7 @@ const placeOrder = async (req, res) => {
     const totalCost = fillPrice * quantity;
 
     // ── Pre-checks ─────────────────────────────────────────────────────────
-    if (side === 'buy') {
+    if (side === 'secondary_buy') {
       const userRes = await tx.query(
         'SELECT wallet_balance FROM users WHERE id=$1 FOR UPDATE',
         [userId]
@@ -47,7 +47,7 @@ const placeOrder = async (req, res) => {
           'INSUFFICIENT_FUNDS'
         );
       }
-      // Reserve funds immediately for both market and limit buy orders
+      // Reserve funds immediately
       await tx.query(
         'UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2',
         [totalCost, userId]
@@ -68,7 +68,7 @@ const placeOrder = async (req, res) => {
           'INSUFFICIENT_TOKENS'
         );
       }
-      // Reserve tokens immediately for both market and limit sell orders
+      // Reserve tokens immediately
       await tx.query(
         `UPDATE portfolio_holdings
          SET quantity = quantity - $1, updated_at = NOW()
@@ -94,7 +94,8 @@ const placeOrder = async (req, res) => {
 
     // ── Market order settlement ────────────────────────────────────────────
     if (type === 'market') {
-      if (side === 'buy') {
+      if (side === 'secondary_buy') {
+        // Add tokens to holdings
         await tx.query(
           `INSERT INTO portfolio_holdings (user_id, token_id, quantity, avg_cost_inr)
            VALUES ($1,$2,$3,$4)
@@ -105,11 +106,31 @@ const placeOrder = async (req, res) => {
                  updated_at   = NOW()`,
           [userId, token.id, quantity, fillPrice]
         );
+        // Record transaction
+        const buyerBalRes  = await tx.query('SELECT wallet_balance FROM users WHERE id=$1', [userId]);
+        await tx.query(
+          `INSERT INTO transactions
+             (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
+           VALUES ($1,'secondary_buy',$2,$3,$4,$5,$6,$7)`,
+          [userId, totalCost, token.id, quantity, order.id,
+           `BUY ${quantity} × ${symbol} @ ₹${fillPrice.toFixed(2)}`,
+           buyerBalRes.rows[0].wallet_balance]
+        );
       } else {
-        // Tokens already reserved — credit wallet
+        // Credit wallet
         await tx.query(
           'UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2',
           [totalCost, userId]
+        );
+        // Record transaction
+        const sellerBalRes = await tx.query('SELECT wallet_balance FROM users WHERE id=$1', [userId]);
+        await tx.query(
+          `INSERT INTO transactions
+             (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
+           VALUES ($1,'secondary_sell',$2,$3,$4,$5,$6,$7)`,
+          [userId, totalCost, token.id, quantity, order.id,
+           `SELL ${quantity} × ${symbol} @ ₹${fillPrice.toFixed(2)}`,
+           sellerBalRes.rows[0].wallet_balance]
         );
       }
     }
@@ -158,17 +179,26 @@ const cancelOrder = async (req, res) => {
     if (!rows.length) return notFound(res, 'Order');
     const order = rows[0];
 
-    // Refund reserved funds/tokens proportional to unfilled quantity
-    if (order.side === 'buy') {
+    // Refund reserved funds/tokens on cancel
+    if (order.side === 'secondary_buy') {
       const refundQty   = order.quantity - order.filled_qty;
       const refundValue = refundQty * parseFloat(order.price_inr);
       await tx.query(
         'UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2',
         [refundValue, req.user.sub]
       );
+      const buyerBalRes = await tx.query('SELECT wallet_balance FROM users WHERE id=$1', [req.user.sub]);
+      await tx.query(
+        `INSERT INTO transactions
+           (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
+         VALUES ($1,'refund',$2,$3,$4,$5,$6,$7)`,
+        [req.user.sub, refundValue, order.token_id, refundQty, order.id,
+         `CANCEL refund for order ${order.id}`,
+         buyerBalRes.rows[0].wallet_balance]
+      );
     }
 
-    if (order.side === 'sell') {
+    if (order.side === 'secondary_sell') {
       const refundQty = order.quantity - order.filled_qty;
       if (refundQty > 0) {
         await tx.query(
