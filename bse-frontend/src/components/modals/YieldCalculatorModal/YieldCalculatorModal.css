@@ -47,12 +47,12 @@
 .yc-header-title em { font-style: italic; color: var(--sky); font-size: 1rem; }
 .yc-header-sub {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem; color: var(--straw-dim);
+  font-size: 0.55rem; color: var(--straw);
   letter-spacing: 0.12em; text-transform: uppercase; margin-top: 0.25rem;
 }
 .yc-close-btn {
   width: 30px; height: 30px; background: none;
-  border: 1px solid var(--glass-border-dim); color: var(--straw-dim);
+  border: 1px solid var(--glass-border-dim); color: var(--straw);
   border-radius: 2px; cursor: pointer; font-size: 0.85rem;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s; margin-left: auto;
@@ -76,7 +76,7 @@
 .yc-section-title {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.53rem; text-transform: uppercase;
-  letter-spacing: 0.14em; color: var(--straw-dim);
+  letter-spacing: 0.14em; color: var(--straw);
   margin-bottom: 0.75rem;
   display: flex; align-items: center; gap: 0.5rem;
 }
@@ -145,7 +145,7 @@
   box-sizing: border-box;
 }
 .yc-amount-input:focus { border-color: var(--harvest); }
-.yc-amount-input::placeholder { color: var(--straw-dim); }
+.yc-amount-input::placeholder { color: var(--straw); }
 .yc-amount-presets {
   display: flex; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: wrap;
 }
@@ -153,7 +153,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.55rem; padding: 0.2rem 0.6rem;
   background: none; border: 1px solid var(--glass-border-dim);
-  color: var(--straw-dim); cursor: pointer; border-radius: 1px;
+  color: var(--straw); cursor: pointer; border-radius: 1px;
   transition: all 0.15s;
 }
 .yc-preset:hover { border-color: var(--harvest); color: var(--sky); }
@@ -197,7 +197,7 @@
 .yc-slider-labels {
   display: flex; justify-content: space-between;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.5rem; color: var(--straw-dim); margin-top: 0.4rem;
+  font-size: 0.5rem; color: var(--straw); margin-top: 0.4rem;
 }
 
 /* Calculate button */
@@ -246,7 +246,7 @@
 .yc-kpi-lbl {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.5rem; text-transform: uppercase;
-  letter-spacing: 0.13em; color: var(--straw-dim); margin-bottom: 0.4rem;
+  letter-spacing: 0.13em; color: var(--straw); margin-bottom: 0.4rem;
 }
 .yc-kpi-num {
   font-family: 'Cormorant Garamond', serif;
@@ -256,7 +256,7 @@
 .yc-kpi-num.green { color: var(--field-light); }
 .yc-kpi-sub {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.5rem; color: var(--straw-dim); margin-top: 0.3rem;
+  font-size: 0.5rem; color: var(--straw); margin-top: 0.3rem;
 }
 
 /* Confidence band chart */
@@ -269,14 +269,14 @@
 .yc-chart-title {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.53rem; text-transform: uppercase;
-  letter-spacing: 0.12em; color: var(--straw-dim);
+  letter-spacing: 0.12em; color: var(--straw);
   padding: 0.7rem 1rem 0; display: flex;
   align-items: center; justify-content: space-between;
 }
 .yc-band-legend {
   display: flex; gap: 1rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.5rem; color: var(--straw-dim);
+  font-size: 0.5rem; color: var(--straw);
   padding: 0 1rem 0.6rem;
 }
 .yc-bl-item { display: flex; align-items: center; gap: 0.3rem; }
@@ -291,7 +291,7 @@
 }
 .yc-scenario-table th {
   text-transform: uppercase; letter-spacing: 0.1em;
-  color: var(--straw-dim); font-weight: 400;
+  color: var(--straw); font-weight: 400;
   padding: 0.4rem 0.7rem; text-align: left;
   border-bottom: 1px solid var(--glass-border-dim);
 }
@@ -319,7 +319,7 @@
 .yc-risk-icon { font-size: 0.9rem; }
 .yc-risk-name {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.53rem; color: var(--straw-dim);
+  font-size: 0.53rem; color: var(--straw);
 }
 .yc-risk-bar-track {
   flex: 1; height: 3px;
@@ -347,7 +347,7 @@
 .yc-empty-icon { font-size: 2.5rem; opacity: 0.3; }
 .yc-empty-text {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 1rem; color: var(--straw-dim); font-style: italic;
+  font-size: 1rem; color: var(--straw); font-style: italic;
 }
 
 /* Animate number count-up */

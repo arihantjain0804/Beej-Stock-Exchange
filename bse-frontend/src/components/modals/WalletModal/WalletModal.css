@@ -94,7 +94,7 @@
 .wm-close {
   background: none;
   border: 1px solid var(--glass-border-dim);
-  color: var(--straw-dim);
+  color: var(--straw);
   width: 30px; height: 30px;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.9rem;
@@ -314,7 +314,7 @@
 .wm-connecting-status {
   font-size: 0.88rem;
   font-style: italic;
-  color: var(--straw-dim);
+  color: var(--straw);
   opacity: 0.5;
 }
 .wm-progress-dots {
@@ -392,7 +392,7 @@
 .wm-address-copy {
   background: none;
   border: 1px solid var(--glass-border-dim);
-  color: var(--straw-dim);
+  color: var(--straw);
   padding: 0.3rem 0.7rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.48rem;
@@ -426,7 +426,7 @@
   font-size: 0.46rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--straw-dim);
+  color: var(--straw);
   opacity: 0.35;
   display: block;
   margin-top: 0.2rem;
@@ -449,7 +449,7 @@
 .wm-btn-disconnect {
   background: none;
   border: 1px solid var(--glass-border-dim);
-  color: var(--straw-dim);
+  color: var(--straw);
   padding: 0.75rem 1.2rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.58rem;

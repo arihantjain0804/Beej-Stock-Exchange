@@ -56,7 +56,7 @@
 }
 .card-bookmark:hover { border-color: var(--harvest); background: var(--harvest-dim); }
 .card-bookmark svg { width: 13px; height: 13px; transition: all 0.25s; }
-.card-bookmark .bm-fill { fill: none; stroke: var(--straw-dim); stroke-width: 1.5; transition: all 0.25s; }
+.card-bookmark .bm-fill { fill: none; stroke: var(--straw); stroke-width: 1.5; transition: all 0.25s; }
 .card-bookmark:hover .bm-fill,
 .card-bookmark.bookmarked .bm-fill { fill: var(--harvest); stroke: var(--harvest); }
 .card-bookmark.bookmarked { border-color: var(--harvest); background: var(--harvest-dim); }
@@ -126,7 +126,7 @@
 .card-crop-variety {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.58rem;
-  color: var(--straw-dim);
+  color: var(--straw);
   letter-spacing: 0.1em;
   margin-top: 0.3rem;
 }
@@ -158,7 +158,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.58rem;
   letter-spacing: 0.12em;
-  color: var(--straw-dim);
+  color: var(--straw);
   text-transform: uppercase;
   opacity: 0.6;
 }
@@ -183,7 +183,7 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.58rem;
   letter-spacing: 0.1em;
-  color: var(--straw-dim);
+  color: var(--straw);
   opacity: 0.6;
 }
 .cp-pct {
@@ -233,7 +233,7 @@
 .farmer-location {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.58rem;
-  color: var(--straw-dim);
+  color: var(--straw);
   letter-spacing: 0.08em;
   opacity: 0.6;
 }

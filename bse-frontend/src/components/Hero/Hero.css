@@ -69,9 +69,9 @@
   transform: translateX(-50%);
   width: 195px; height: 195px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,230,140,0.95) 0%, rgba(232,200,122,0.6) 30%, rgba(200,134,10,0.2) 60%, transparent 75%);
+  background: radial-gradient(circle, rgba(255,230,140,0.95) 0%, rgba(232,200,122,0.6) 30%, rgba(200,134,10,0.2) 60%, transparent 80%);
   filter: blur(3px);
-  animation: sunBreath 5s ease-in-out infinite;
+  animation: sunBreath 4s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes sunBreath {
@@ -159,16 +159,18 @@
 }
 .hero-eyebrow {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.62rem;
+    font-size: 0.65rem;
     letter-spacing: 0.45em;
     text-transform: uppercase;
     color: var(--harvest);
     margin-bottom: 1.6rem;
-    opacity: 0.75;
+    opacity: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 1rem;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.9);
+    transform: translateY(0rem);
 }
 .hero-eyebrow::before, .hero-eyebrow::after {
   content: '';
