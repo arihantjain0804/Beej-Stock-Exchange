@@ -1,41 +1,22 @@
-// ─── BSE Matching Engine ──────────────────────────────────────────────────────
-// Price-time priority matching for limit orders.
-// Called inside the same DB transaction as placeOrder so fills are atomic.
-//
-// Rules:
-//   BUY  order matches open SELL orders where sell.price_inr <= buy.price_inr
-//   SELL order matches open BUY  orders where buy.price_inr  >= sell.price_inr
-//   Orders sorted by best price first, then oldest first (time priority)
-//   Fill price = the resting order's price (maker price)
-
 const logger = require('../utils/logger');
 
-/**
- * Match a newly placed limit order against the opposite side of the book.
- * Must be called inside a withTransaction callback — pass the `tx` client.
- *
- * @param {object} tx      - DB transaction client
- * @param {object} order   - The newly inserted order row
- * @param {object} token   - { id, current_price_inr }
- */
 async function matchOrder(tx, order, token) {
   if (order.type !== 'limit') return;
   if (order.status === 'filled') return;
 
-  const isBuy       = order.side === 'buy';
-  const oppSide     = isBuy ? 'sell' : 'buy';
+  const isBuy          = order.side === 'buy';
+  const oppSide        = isBuy ? 'sell' : 'buy';
   const priceCondition = isBuy ? `price_inr <= $2` : `price_inr >= $2`;
-  const priceOrder  = isBuy ? 'ASC' : 'DESC';
+  const priceOrder     = isBuy ? 'ASC' : 'DESC';
 
   const { rows: counterOrders } = await tx.query(
-    `SELECT o.*, u.wallet_balance
+    `SELECT o.*
      FROM orders o
-     JOIN users u ON u.id = o.user_id
-     WHERE o.token_id    = $1
-       AND o.side        = '${oppSide}'
-       AND o.status      IN ('open', 'partially_filled')
+     WHERE o.token_id  = $1
+       AND o.side      = '${oppSide}'
+       AND o.status    IN ('open', 'partially_filled')
        AND o.${priceCondition}
-       AND o.user_id    != $3
+       AND o.user_id  != $3
      ORDER BY o.price_inr ${priceOrder}, o.created_at ASC
      FOR UPDATE OF o`,
     [token.id, order.price_inr, order.user_id]
@@ -72,12 +53,11 @@ async function matchOrder(tx, order, token) {
     const sellerId = isBuy ? counter.user_id : order.user_id;
 
     await tx.query(
-      `UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2`,
+      'UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2',
       [fillValue, buyerId]
     );
-
     await tx.query(
-      `UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`,
+      'UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2',
       [fillValue, sellerId]
     );
 
@@ -94,10 +74,31 @@ async function matchOrder(tx, order, token) {
 
     await tx.query(
       `UPDATE portfolio_holdings
-       SET quantity   = quantity - $1,
-           updated_at = NOW()
+       SET quantity = quantity - $1, updated_at = NOW()
        WHERE user_id = $2 AND token_id = $3`,
       [fillQty, sellerId, token.id]
+    );
+
+    // ── Record transactions ───────────────────────────────────────────────
+    const buyerBalRes  = await tx.query('SELECT wallet_balance FROM users WHERE id=$1', [buyerId]);
+    const sellerBalRes = await tx.query('SELECT wallet_balance FROM users WHERE id=$1', [sellerId]);
+
+    await tx.query(
+      `INSERT INTO transactions
+         (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
+       VALUES ($1,'buy',$2,$3,$4,$5,$6,$7)`,
+      [buyerId, fillValue, token.id, fillQty, order.id,
+       `BUY ${fillQty} tokens @ ₹${fillPrice.toFixed(2)} (matched)`,
+       buyerBalRes.rows[0].wallet_balance]
+    );
+
+    await tx.query(
+      `INSERT INTO transactions
+         (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
+       VALUES ($1,'sell',$2,$3,$4,$5,$6,$7)`,
+      [sellerId, fillValue, token.id, fillQty, counter.id,
+       `SELL ${fillQty} tokens @ ₹${fillPrice.toFixed(2)} (matched)`,
+       sellerBalRes.rows[0].wallet_balance]
     );
 
     remainingQty -= fillQty;

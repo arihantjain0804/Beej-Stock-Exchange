@@ -28,12 +28,12 @@
 .pf-wallet-addr {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.55rem; letter-spacing: 0.1em;
-  color: var(--straw-dim); opacity: 0.45; margin-top: 0.15rem;
+  color: var(--straw); opacity: 0.7; margin-top: 0.15rem;
 }
 .pf-close {
   width: 32px; height: 32px;
   background: none; border: 1px solid var(--glass-border-dim);
-  color: var(--straw-dim); font-size: 1.1rem;
+  color: var(--straw); font-size: 1.1rem;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: all 0.25s; flex-shrink: 0;
 }
@@ -61,7 +61,7 @@
 .pf-sum-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.5rem; letter-spacing: 0.15em;
-  color: var(--straw-dim); opacity: 0.45; text-transform: uppercase;
+  color: var(--straw); opacity: 0.7; text-transform: uppercase;
 }
 .pf-sum-value {
   font-family: 'JetBrains Mono', monospace;
@@ -84,7 +84,7 @@
   flex: 1; padding: 0.75rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--straw); opacity: 0.45;
+  color: var(--straw); opacity: 0.7;
   background: none; border: none; cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.25s;
@@ -274,7 +274,7 @@
 .pf-wallet-addr {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.55rem; letter-spacing: 0.1em;
-  color: var(--straw-dim); opacity: 0.45; margin-top: 0.15rem;
+  color: var(--straw); opacity: 0.7; margin-top: 0.15rem;
 }
 /* Tabs */
 .pf-tabs {
