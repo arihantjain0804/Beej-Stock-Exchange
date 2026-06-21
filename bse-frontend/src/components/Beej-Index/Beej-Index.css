@@ -298,7 +298,7 @@
   font-size: 0.48rem;
   letter-spacing: 0.06em;
   color: var(--straw-dim);
-  opacity: 0.45;
+  opacity: 0.7;
 }
 /* ============================================================
    BSE INDEX EXPANDED MODAL
@@ -414,8 +414,8 @@
   font-size: 0.46rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--straw-dim);
-  opacity: 0.35;
+  color: var(--straw);
+  opacity: 0.7;
 }
 .bsi-modal-stat-val {
   font-family: 'JetBrains Mono', monospace;
@@ -464,8 +464,8 @@
   font-size: 0.52rem;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--straw-dim);
-  opacity: 0.45;
+  color: var(--straw);
+  opacity: 0.7;
 }
 .bsi-modal-breakdown-list {
   flex: 1;
