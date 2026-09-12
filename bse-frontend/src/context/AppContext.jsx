@@ -2,11 +2,10 @@ import {
   createContext, useContext, useState,
   useCallback, useEffect, useRef,
 } from 'react';
-import { TOKENS, seedPrices } from '../data/tokens';
 import { useLivePrices } from '../hooks/useLivePrices';
 import {
   authApi, portfolioApi,
-  watchlistApi, notificationsApi,
+  watchlistApi, notificationsApi, tokensApi,
 } from '../api/index';
 import { tokenStore } from '../api/client';
 
@@ -26,7 +25,41 @@ export function AppProvider({ children }) {
   const [entered, setEntered] = useState(false);
 
   // ── Token prices ──────────────────────────────────────────────────────────
-  const [tokens, setTokens] = useState(() => seedPrices(TOKENS));
+  // Real tokens come from crop_tokens in the DB via GET /tokens — whatever
+  // symbols actually exist there, so the frontend can never drift out of
+  // sync with the backend the way the old hardcoded data/tokens.js could.
+  const [tokens, setTokens] = useState([]);
+  const [tokensLoading, setTokensLoading] = useState(true);
+
+  useEffect(() => {
+    tokensApi.list({ limit: 50 })
+      .then(res => {
+        const mapped = (res.data || []).map(t => {
+          const fillPct = t.total_supply
+            ? Math.round((t.circulating_supply / t.total_supply) * 100)
+            : 0;
+          const daysToHarvest = t.harvest_date
+            ? Math.max(0, Math.ceil((new Date(t.harvest_date) - new Date()) / 86400000))
+            : 0;
+          return {
+            ...t,                                  // keep every raw backend field too
+            id: t.id,
+            crop: t.name,
+            symbol: t.symbol,
+            region: t.state,
+            basePrice: t.token_price_inr,
+            price: t.current_price_inr ?? t.token_price_inr,
+            prevPrice: t.prev_close_inr ?? t.current_price_inr ?? t.token_price_inr,
+            fill: fillPct,
+            days: daysToHarvest,
+          };
+        });
+        setTokens(mapped);
+      })
+      .catch(err => console.error('Token list fetch failed', err))
+      .finally(() => setTokensLoading(false));
+  }, []);
+
   useLivePrices(setTokens);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -269,7 +302,7 @@ export function AppProvider({ children }) {
   // ─── Context Value ─────────────────────────────────────────────────────────
   const value = {
     entered, setEntered,
-    tokens,
+    tokens, tokensLoading,
     user,
     authLoading, setAuthLoading,
     authError, setAuthError,

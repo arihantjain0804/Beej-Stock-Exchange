@@ -4,8 +4,8 @@ async function matchOrder(tx, order, token) {
   if (order.type !== 'limit') return;
   if (order.status === 'filled') return;
 
-  const isBuy          = order.side === 'secondary_buy';
-  const oppSide        = isBuy ? 'secondary_sell' : 'secondary_buy';
+  const isBuy          = order.side === 'buy';
+  const oppSide        = isBuy ? 'sell' : 'buy';
   const priceCondition = isBuy ? `price_inr <= $2` : `price_inr >= $2`;
   const priceOrder     = isBuy ? 'ASC' : 'DESC';
 
@@ -34,7 +34,6 @@ async function matchOrder(tx, order, token) {
     const fillPrice = parseFloat(counter.price_inr);
     const fillValue = fillQty * fillPrice;
 
-    // ── Update counter (resting) order ────────────────────────────────────
     const newCounterFilled = counter.filled_qty + fillQty;
     const counterStatus    = newCounterFilled >= counter.quantity ? 'filled' : 'partially_filled';
 
@@ -48,7 +47,6 @@ async function matchOrder(tx, order, token) {
       [newCounterFilled, fillPrice, fillQty, counterStatus, counter.id]
     );
 
-    // ── Settle wallets and holdings ───────────────────────────────────────
     const buyerId  = isBuy ? order.user_id   : counter.user_id;
     const sellerId = isBuy ? counter.user_id : order.user_id;
 
@@ -79,9 +77,12 @@ async function matchOrder(tx, order, token) {
       [fillQty, sellerId, token.id]
     );
 
-    // ── Record transactions ───────────────────────────────────────────────
-    const buyerBalRes  = await tx.query('SELECT wallet_balance FROM users WHERE id=$1', [buyerId]);
-    const sellerBalRes = await tx.query('SELECT wallet_balance FROM users WHERE id=$1', [sellerId]);
+    const buyerBalRes  = await tx.query(
+      'SELECT wallet_balance FROM users WHERE id=$1', [buyerId]
+    );
+    const sellerBalRes = await tx.query(
+      'SELECT wallet_balance FROM users WHERE id=$1', [sellerId]
+    );
 
     await tx.query(
       `INSERT INTO transactions
@@ -106,13 +107,10 @@ async function matchOrder(tx, order, token) {
     logger.info('Order matched', {
       incomingOrder: order.id,
       counterOrder:  counter.id,
-      fillQty,
-      fillPrice,
-      fillValue,
+      fillQty, fillPrice, fillValue,
     });
   }
 
-  // ── Update incoming order status ──────────────────────────────────────────
   const totalFilled    = order.quantity - remainingQty;
   const incomingStatus = totalFilled >= order.quantity
     ? 'filled'

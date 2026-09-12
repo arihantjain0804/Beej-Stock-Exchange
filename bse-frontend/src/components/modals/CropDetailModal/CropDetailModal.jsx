@@ -213,7 +213,7 @@ export default function CropDetailModal() {
     setActiveTab("overview");
   }
 
-  const isWatchlisted = watchlist.includes(cropDetail.id);
+  const isWatchlisted = watchlist.includes(cropDetail.tokenSymbol);
 
   return (
     <div className="crop-modal-backdrop open" onClick={(e) => e.target === e.currentTarget && handleClose()}>
@@ -259,11 +259,11 @@ export default function CropDetailModal() {
           <div className={`cem-tab-panel${activeTab === "overview" ? " active" : ""}`}>
             <div className="cem-stats-grid">
               <div className="cem-stat">
-                <span className="cem-stat-val">{cropDetail.landArea ?? "14.5 Acres"}</span>
+                <span className="cem-stat-val">{cropDetail.land ?? "14.5 Acres"}</span>
                 <span className="cem-stat-key">Land Area</span>
               </div>
               <div className="cem-stat">
-                <span className="cem-stat-val">{cropDetail.estYield ?? "52 Q/Acre"}</span>
+                <span className="cem-stat-val">{cropDetail.yield_ ?? "52 Q/Acre"}</span>
                 <span className="cem-stat-key">Est. Yield</span>
               </div>
               <div className="cem-stat">
@@ -271,11 +271,11 @@ export default function CropDetailModal() {
                 <span className="cem-stat-key">Harvest In</span>
               </div>
               <div className="cem-stat">
-                <span className="cem-stat-val">{cropDetail.fundingTarget ?? "₹8,40,000"}</span>
+                <span className="cem-stat-val">{cropDetail.target ?? "₹8,40,000"}</span>
                 <span className="cem-stat-key">Funding Target</span>
               </div>
               <div className="cem-stat">
-                <span className="cem-stat-val highlight">{cropDetail.projectedReturn ?? "21.4%"}</span>
+                <span className="cem-stat-val highlight">{cropDetail.return_ ?? "21.4%"}</span>
                 <span className="cem-stat-key">Projected Return</span>
               </div>
               <div className="cem-stat">
@@ -304,7 +304,7 @@ export default function CropDetailModal() {
             <div className="cem-farmer-strip">
               <div className="cem-farmer-avatar">{cropDetail.farmerAvatar ?? "👨‍🌾"}</div>
               <div>
-                <span className="cem-farmer-name">{cropDetail.farmerName ?? "Harpreet Singh"}</span>
+                <span className="cem-farmer-name">{cropDetail.farmer ?? "Harpreet Singh"}</span>
                 <span className="cem-farmer-loc">{cropDetail.farmerLoc ?? "Ludhiana, Punjab"}</span>
               </div>
               <div style={{ marginLeft: "auto" }}>
@@ -320,22 +320,21 @@ export default function CropDetailModal() {
                 <div className="cem-agro-icon">🔬</div>
                 <div>
                   <div className="cem-agro-title">{cropDetail.agroTitle ?? `Field Assessment — ${cropDetail.name}`}</div>
-                  <div className="cem-agro-sub">{cropDetail.agroDate ?? "Reviewed by BSE Agronomist Team · April 2025"}</div>
+                  <div className="cem-agro-sub">
+                    {cropDetail.agroDate ?? (cropDetail.description ? "On file" : "Not yet reviewed")}
+                  </div>
                 </div>
               </div>
               <div
                 className="cem-agro-note"
-                dangerouslySetInnerHTML={{ __html: cropDetail.agroNote ?? `This is an <strong>exceptionally well-managed plot</strong> in the Ludhiana belt.` }}
+                dangerouslySetInnerHTML={{
+                  __html: cropDetail.description
+                    ? cropDetail.description
+                    : `No agronomist assessment has been published for this listing yet.`
+                }}
               />
               <div className="cem-agro-checklist">
-                {(cropDetail.agroChecklist ?? [
-                  { text: "Soil nitrogen levels verified — optimal range", warn: false },
-                  { text: "Drip irrigation system operational & inspected", warn: false },
-                  { text: "HD-2967 variety — rust-resistant, high-yield certified seed", warn: false },
-                  { text: "Land ownership documents verified (Khatauni on file)", warn: false },
-                  { text: "3 consecutive successful harvests — strong track record", warn: false },
-                  { text: "Mild aphid pressure observed — preventive spray scheduled", warn: true },
-                ]).map((item, i) => (
+                {(cropDetail.agroChecklist ?? []).map((item, i) => (
                   <div key={i} className="cem-agro-check">
                     <div className={`cem-agro-check-dot${item.warn ? " warn" : ""}`}></div>
                     {item.text}
@@ -347,30 +346,31 @@ export default function CropDetailModal() {
 
           {/* TAB: Weather Risk */}
           <div className={`cem-tab-panel${activeTab === "weather" ? " active" : ""}`}>
-            <div className="cem-weather-grid">
-              {(cropDetail.weatherCards ?? [
-                { icon: "🌡️", label: "Temperature Forecast", value: "22–28°C · Stable", fill: 25 },
-                { icon: "🌧️", label: "Rainfall Probability", value: "Low · 18% chance", fill: 20 },
-                { icon: "💨", label: "Wind / Storm Risk", value: "Minimal · Calm season", fill: 15 },
-                { icon: "🌾", label: "Harvest Window Risk", value: "Low · 38-day buffer", fill: 22 },
-              ]).map((card, i) => (
-                <div key={i} className="cem-weather-card">
-                  <span className="cem-wc-icon">{card.icon}</span>
-                  <span className="cem-wc-label">{card.label}</span>
-                  <span className="cem-wc-value">{card.value}</span>
-                  <div className="cem-wc-risk-bar">
-                    <div className="cem-wc-risk-fill risk-fill-low" style={{ width: `${card.fill}%` }}></div>
-                  </div>
+            {cropDetail.weatherCards ? (
+              <>
+                <div className="cem-weather-grid">
+                  {cropDetail.weatherCards.map((card, i) => (
+                    <div key={i} className="cem-weather-card">
+                      <span className="cem-wc-icon">{card.icon}</span>
+                      <span className="cem-wc-label">{card.label}</span>
+                      <span className="cem-wc-value">{card.value}</span>
+                      <div className="cem-wc-risk-bar">
+                        <div className="cem-wc-risk-fill risk-fill-low" style={{ width: `${card.fill}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="cem-risk-summary">
-              <span className="cem-risk-sum-label">Overall Weather Risk Assessment</span>
-              <p
-                className="cem-risk-sum-text"
-                dangerouslySetInnerHTML={{ __html: cropDetail.weatherSummary ?? `Punjab's Rabi season forecast for the harvest window (May–June) is historically stable. Risk is rated <strong>LOW</strong>.` }}
-              />
-            </div>
+                <div className="cem-risk-summary">
+                  <span className="cem-risk-sum-label">Overall Weather Risk Assessment</span>
+                  <p className="cem-risk-sum-text" dangerouslySetInnerHTML={{ __html: cropDetail.weatherSummary }} />
+                </div>
+              </>
+            ) : (
+              <div className="cem-risk-summary">
+                <span className="cem-risk-sum-label">Overall Weather Risk Assessment</span>
+                <p className="cem-risk-sum-text">No weather risk assessment has been published for this listing yet.</p>
+              </div>
+            )}
           </div>
 
           {/* TAB: Token Price */}
