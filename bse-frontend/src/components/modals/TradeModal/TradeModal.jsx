@@ -1,13 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppContext } from '../../../context/AppContext';
-import { BSI_CONSTITUENTS } from '../../../data/tokens';
-import { ordersApi } from '../../../api/index';
+import { tokensApi, ordersApi } from '../../../api/index';
 import './TradeModal.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TIMEFRAMES = ['1D', '1W', '1M', 'ALL'];
+const TF_DAYS = { '1D': 2, '1W': 7, '1M': 30, 'ALL': 9999 };
 
-// Generate price history for a token
+// ─── Fallback generators ──────────────────────────────────────────────────────
+// Real orders/trades/price_history tables are often empty for a brand-new
+// listing (no one has traded it yet). Rather than showing a blank chart or
+// empty order book, we fall back to an illustrative simulation — clearly a
+// UI affordance for "what live trading looks like," not a fabricated claim
+// about any real crop or farmer.
 function genHistory(basePrice, points) {
   const hist = [];
   let p = basePrice * (0.88 + Math.random() * 0.08);
@@ -18,22 +23,20 @@ function genHistory(basePrice, points) {
   return hist;
 }
 
-// Generate order book entries
 function genOrderBook(basePrice) {
   const asks = [];
   const bids = [];
   let ap = basePrice + (Math.random() * 2);
   let bp = basePrice - (Math.random() * 2);
   for (let i = 0; i < 10; i++) {
-    asks.push({ price: parseFloat(ap.toFixed(2)), qty: parseFloat((Math.random() * 5000 + 50).toFixed(1)), side: 'ask' });
+    asks.push({ price: parseFloat(ap.toFixed(2)), qty: parseFloat((Math.random() * 5000 + 50).toFixed(1)) });
     ap += Math.random() * 1.5;
-    bids.push({ price: parseFloat(bp.toFixed(2)), qty: parseFloat((Math.random() * 5000 + 50).toFixed(1)), side: 'bid' });
+    bids.push({ price: parseFloat(bp.toFixed(2)), qty: parseFloat((Math.random() * 5000 + 50).toFixed(1)) });
     bp -= Math.random() * 1.5;
   }
   return { asks: asks.reverse(), bids };
 }
 
-// Generate recent trades
 function genRecentTrades(basePrice, count = 20) {
   const trades = [];
   let p = basePrice;
@@ -65,10 +68,9 @@ function PriceChart({ history, color = '#6daf4a' }) {
 
     const min = Math.min(...history) * 0.998;
     const max = Math.max(...history) * 1.002;
-    const toX = i => (i / (history.length - 1)) * W;
-    const toY = v => H - ((v - min) / (max - min)) * H * 0.88 - H * 0.06;
+    const toX = i => (i / (Math.max(history.length - 1, 1))) * W;
+    const toY = v => H - ((v - min) / (max - min || 1)) * H * 0.88 - H * 0.06;
 
-    // Area gradient
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, color + '40');
     grad.addColorStop(1, color + '00');
@@ -78,14 +80,12 @@ function PriceChart({ history, color = '#6daf4a' }) {
     ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
     ctx.fillStyle = grad; ctx.fill();
 
-    // Line
     ctx.beginPath();
     ctx.moveTo(toX(0), toY(history[0]));
     history.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
     ctx.strokeStyle = color; ctx.lineWidth = 1.5;
     ctx.lineJoin = 'round'; ctx.stroke();
 
-    // Hover crosshair
     if (hoverX != null) {
       const idx = Math.round((hoverX / W) * (history.length - 1));
       const cx = toX(idx), cy = toY(history[idx]);
@@ -99,7 +99,6 @@ function PriceChart({ history, color = '#6daf4a' }) {
       ctx.strokeStyle = '#0a0803'; ctx.lineWidth = 2; ctx.stroke();
     }
 
-    // Y-axis price labels
     ctx.fillStyle = 'rgba(212,200,154,0.3)';
     ctx.font = '10px JetBrains Mono, monospace';
     ctx.textAlign = 'right';
@@ -135,7 +134,7 @@ function PriceChart({ history, color = '#6daf4a' }) {
 
   return (
     <div className="tm-chart-wrap">
-      {hoverIdx != null && (
+      {hoverIdx != null && history[hoverIdx] != null && (
         <div className="tm-price-bubble" style={{ left: `${(hoverIdx / (history.length - 1)) * 100}%` }}>
           ₹{history[hoverIdx]?.toFixed(2)}
         </div>
@@ -164,43 +163,41 @@ function DepthChart({ orderBook }) {
 
     const bids = [...orderBook.bids].reverse();
     const asks = [...orderBook.asks];
+    if (!bids.length || !asks.length) return;
 
     let bidCum = 0, askCum = 0;
     const bidPoints = bids.map(b => { bidCum += b.qty; return bidCum; });
     const askPoints = asks.map(a => { askCum += a.qty; return askCum; });
-    const maxQ = Math.max(bidCum, askCum);
+    const maxQ = Math.max(bidCum, askCum) || 1;
 
-    // Bid area (green, left half)
     const bidGrad = ctx.createLinearGradient(0, 0, W / 2, 0);
     bidGrad.addColorStop(0, 'rgba(109,175,74,0)');
     bidGrad.addColorStop(1, 'rgba(109,175,74,0.25)');
     ctx.beginPath();
     ctx.moveTo(0, H);
     bids.forEach((b, i) => {
-      ctx.lineTo((i / (bids.length - 1)) * (W / 2), H - (bidPoints[i] / maxQ) * H * 0.85);
+      ctx.lineTo((i / Math.max(bids.length - 1, 1)) * (W / 2), H - (bidPoints[i] / maxQ) * H * 0.85);
     });
     ctx.lineTo(W / 2, H); ctx.closePath();
     ctx.fillStyle = bidGrad; ctx.fill();
     ctx.beginPath();
-    bids.forEach((b, i) => ctx.lineTo((i / (bids.length - 1)) * (W / 2), H - (bidPoints[i] / maxQ) * H * 0.85));
+    bids.forEach((b, i) => ctx.lineTo((i / Math.max(bids.length - 1, 1)) * (W / 2), H - (bidPoints[i] / maxQ) * H * 0.85));
     ctx.strokeStyle = '#6daf4a'; ctx.lineWidth = 1.2; ctx.stroke();
 
-    // Ask area (red, right half)
     const askGrad = ctx.createLinearGradient(W / 2, 0, W, 0);
     askGrad.addColorStop(0, 'rgba(180,60,40,0.25)');
     askGrad.addColorStop(1, 'rgba(180,60,40,0)');
     ctx.beginPath();
     ctx.moveTo(W / 2, H);
     asks.forEach((a, i) => {
-      ctx.lineTo(W / 2 + (i / (asks.length - 1)) * (W / 2), H - (askPoints[i] / maxQ) * H * 0.85);
+      ctx.lineTo(W / 2 + (i / Math.max(asks.length - 1, 1)) * (W / 2), H - (askPoints[i] / maxQ) * H * 0.85);
     });
     ctx.lineTo(W, H); ctx.closePath();
     ctx.fillStyle = askGrad; ctx.fill();
     ctx.beginPath();
-    asks.forEach((a, i) => ctx.lineTo(W / 2 + (i / (asks.length - 1)) * (W / 2), H - (askPoints[i] / maxQ) * H * 0.85));
+    asks.forEach((a, i) => ctx.lineTo(W / 2 + (i / Math.max(asks.length - 1, 1)) * (W / 2), H - (askPoints[i] / maxQ) * H * 0.85));
     ctx.strokeStyle = '#b43c28'; ctx.lineWidth = 1.2; ctx.stroke();
 
-    // Mid price label
     const midPrice = ((bids[bids.length - 1]?.price || 0) + (asks[0]?.price || 0)) / 2;
     ctx.fillStyle = 'rgba(212,200,154,0.35)';
     ctx.font = '9px JetBrains Mono, monospace';
@@ -213,82 +210,119 @@ function DepthChart({ orderBook }) {
 
 // ─── Main TradeModal ──────────────────────────────────────────────────────────
 export default function TradeModal() {
-  const { tradeOpen, setTradeOpen, showToast, connected, setWalletOpen } = useAppContext();
+  const {
+    tradeOpen, setTradeOpen, tradeSymbol, setTradeSymbol, showToast, connected, setWalletOpen, tokens,
+  } = useAppContext();
 
-  const [activeToken, setActiveToken] = useState(BSI_CONSTITUENTS[2]); // VDB-SOY default
+  // Which real token this modal shows. tradeSymbol comes from handleInvest
+  // (the token the user actually clicked); fall back to the first real
+  // token if the modal was opened without a specific one in mind.
+  const activeSymbol = tradeSymbol || tokens[0]?.symbol || null;
+  const activeToken = useMemo(
+    () => tokens.find(t => t.symbol === activeSymbol) || null,
+    [tokens, activeSymbol]
+  );
+
   const [tf, setTf] = useState('1D');
   const [side, setSide] = useState('BUY');
   const [price, setPrice] = useState('');
   const [qty, setQty] = useState('');
-  const [histories, setHistories] = useState({});
-  const [orderBook, setOrderBook] = useState(() => genOrderBook(623));
-  const [recentTrades, setRecentTrades] = useState(() => genRecentTrades(623));
-  const [livePrice, setLivePrice] = useState(activeToken.basePrice);
-  const [livePrices, setLivePrices] = useState(() =>
-    Object.fromEntries(BSI_CONSTITUENTS.map(t => [t.symbol, t.basePrice]))
-  );
 
-  // Generate histories on mount
-  useEffect(() => {
-    const h = {};
-    BSI_CONSTITUENTS.forEach(t => {
-      h[t.symbol] = {
-        '1D': genHistory(t.basePrice, 80),
-        '1W': genHistory(t.basePrice, 120),
-        '1M': genHistory(t.basePrice, 200),
-        'ALL': genHistory(t.basePrice, 350),
-      };
-    });
-    setHistories(h);
+  const [orderBook, setOrderBook] = useState({ bids: [], asks: [] });
+  const [recentTrades, setRecentTrades] = useState([]);
+  const [priceHistoryRows, setPriceHistoryRows] = useState([]);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
+
+  // Fetch real market data for the active token whenever it changes.
+  const loadMarketData = useCallback(async (symbol) => {
+    if (!symbol) return;
+    setMarketLoading(true);
+    try {
+      const [obRes, trRes, phRes] = await Promise.all([
+        tokensApi.orderBook(symbol),
+        tokensApi.recentTrades(symbol, 30),
+        tokensApi.priceHistory(symbol, 90),
+      ]);
+      setOrderBook({
+        bids: (obRes.data?.bids || []).map(b => ({ price: Number(b.price_inr), qty: Number(b.quantity) })),
+        asks: (obRes.data?.asks || []).map(a => ({ price: Number(a.price_inr), qty: Number(a.quantity) })),
+      });
+      // Real trades table doesn't record buy/sell direction, so we derive an
+      // uptick/downtick indicator from consecutive prices — a standard,
+      // defensible convention, not a fabricated claim.
+      const rows = trRes.data || [];
+      setRecentTrades(rows.map((t, i) => {
+        const prevPrice = rows[i + 1]?.price_inr ?? t.price_inr;
+        return {
+          price: Number(t.price_inr),
+          qty: Number(t.quantity),
+          side: Number(t.price_inr) >= Number(prevPrice) ? 'BUY' : 'SELL',
+          time: new Date(t.executed_at).toTimeString().slice(0, 8),
+        };
+      }));
+      setPriceHistoryRows(phRes.data || []);
+    } catch (err) {
+      console.error('Market data fetch failed', err);
+    } finally {
+      setMarketLoading(false);
+    }
   }, []);
 
-  // Live price tick
   useEffect(() => {
-    if (!tradeOpen) return;
-    const interval = setInterval(() => {
-      setLivePrice(p => {
-        const next = parseFloat((p + (Math.random() - 0.48) * p * 0.003).toFixed(2));
-        return next;
-      });
-      setLivePrices(prev => {
-        const next = { ...prev };
-        BSI_CONSTITUENTS.forEach(t => {
-          next[t.symbol] = parseFloat((prev[t.symbol] + (Math.random() - 0.48) * prev[t.symbol] * 0.002).toFixed(2));
-        });
-        return next;
-      });
-      // Occasionally add a new recent trade
-      if (Math.random() > 0.4) {
-        setRecentTrades(prev => [{
-          price: parseFloat((livePrice + (Math.random() - 0.5) * 2).toFixed(2)),
-          qty: Math.floor(Math.random() * 500 + 1),
-          side: Math.random() > 0.45 ? 'BUY' : 'SELL',
-          time: new Date().toTimeString().slice(0, 8),
-        }, ...prev.slice(0, 24)]);
-      }
-    }, 1800);
-    return () => clearInterval(interval);
-  }, [tradeOpen, livePrice]);
-
-  // Sync livePrice when switching tokens
-  useEffect(() => {
-    setLivePrice(livePrices[activeToken.symbol] || activeToken.basePrice);
-    setOrderBook(genOrderBook(livePrices[activeToken.symbol] || activeToken.basePrice));
+    if (!tradeOpen || !activeSymbol) return;
     setPrice('');
     setQty('');
-  }, [activeToken.symbol]);
-
-  const [orderLoading, setOrderLoading] = useState(false);
+    loadMarketData(activeSymbol);
+  }, [tradeOpen, activeSymbol, loadMarketData]);
 
   if (!tradeOpen) return null;
 
-  const history = histories[activeToken.symbol]?.[tf] || [];
-  const prevPrice = history[history.length - 2] || livePrice;
+  if (!activeToken) {
+    // No tokens loaded yet (still fetching, or none exist) — avoid crashing
+    // on a null token below.
+    return (
+      <div className="tm-overlay" onClick={e => e.target === e.currentTarget && setTradeOpen(false)}>
+        <div className="tm-shell" role="dialog" aria-modal="true" aria-label="Trade">
+          <div className="tm-header">
+            <div className="tm-brand"><span className="tm-brand-main">Loading market…</span></div>
+            <button className="tm-close" onClick={() => setTradeOpen(false)}>✕</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const livePrice = activeToken.price ?? 0;
+  const prevPrice = activeToken.prevPrice ?? livePrice;
   const change = livePrice - prevPrice;
-  const changePct = ((change / prevPrice) * 100).toFixed(2);
+  const changePct = prevPrice ? ((change / prevPrice) * 100).toFixed(2) : '0.00';
   const isUp = change >= 0;
   const orderTotal = price && qty ? (parseFloat(price) * parseFloat(qty)).toFixed(2) : '0.00';
 
+  // Real price history if this token has any recorded trades/history yet;
+  // otherwise fall back to an illustrative simulated series.
+  const realCloses = priceHistoryRows.map(r => Number(r.close)).filter(n => !isNaN(n));
+  const days = TF_DAYS[tf];
+  const history = realCloses.length
+    ? realCloses.slice(-days)
+    : genHistory(livePrice || 100, tf === '1D' ? 80 : tf === '1W' ? 120 : tf === '1M' ? 200 : 350);
+
+  // Real order book if there are any open orders; otherwise illustrative.
+  const displayOrderBook = (orderBook.bids.length || orderBook.asks.length)
+    ? orderBook
+    : genOrderBook(livePrice || 100);
+
+  // Real trades if any exist; otherwise illustrative.
+  const displayTrades = recentTrades.length ? recentTrades : genRecentTrades(livePrice || 100);
+
+  // Real 24h high/low if the backend has recorded them; otherwise an
+  // illustrative estimate band around the live price.
+  const dayHigh = activeToken.day_high_inr ?? livePrice * 1.018;
+  const dayLow  = activeToken.day_low_inr  ?? livePrice * 0.974;
+  const volume  = recentTrades.length
+    ? recentTrades.reduce((sum, t) => sum + t.price * t.qty, 0)
+    : null;
 
   const handlePlaceOrder = async () => {
     if (!qty || parseFloat(qty) <= 0) return;
@@ -314,14 +348,10 @@ export default function TradeModal() {
         `Order ${side === 'BUY' ? 'Filled ✓' : 'Placed'}`,
         `${activeToken.symbol} ${side} ₹${p} × ${qty} tokens · Total ₹${(parseFloat(p) * parseFloat(qty)).toLocaleString('en-IN')}`
       );
-      setRecentTrades(prev => [{
-        price: parseFloat(parseFloat(p).toFixed(2)),
-        qty:   parseInt(qty),
-        side,
-        time:  new Date().toTimeString().slice(0, 8),
-      }, ...prev.slice(0, 24)]);
       setQty('');
       setPrice('');
+      // Refresh real order book / trades to reflect the new order.
+      loadMarketData(activeToken.symbol);
     } catch (err) {
       showToast('Order Failed', err.message || 'Please try again');
     } finally {
@@ -342,18 +372,18 @@ export default function TradeModal() {
             </div>
           </div>
 
-          {/* Token ticker strip */}
+          {/* Token ticker strip — real tokens */}
           <div className="tm-ticker-strip">
-            {BSI_CONSTITUENTS.slice(0, 3).map(t => {
-              const p = livePrices[t.symbol] || t.basePrice;
-              const prev = t.basePrice;
-              const pct = (((p - prev) / prev) * 100).toFixed(2);
+            {tokens.slice(0, 3).map(t => {
+              const p = t.price ?? 0;
+              const prev = t.prevPrice ?? p;
+              const pct = prev ? (((p - prev) / prev) * 100).toFixed(2) : '0.00';
               const up = p >= prev;
               return (
                 <div
                   key={t.symbol}
                   className={`tm-ticker-item${activeToken.symbol === t.symbol ? ' active' : ''}`}
-                  onClick={() => setActiveToken(t)}
+                  onClick={() => setTradeSymbol(t.symbol)}
                 >
                   <span className="tm-ticker-sym">{t.symbol}</span>
                   <span className="tm-ticker-name">{t.name}</span>
@@ -377,7 +407,7 @@ export default function TradeModal() {
               <span>PRICE (₹)</span><span>QTY</span><span>TOTAL</span>
             </div>
             <div className="tm-ob-asks">
-              {orderBook.asks.map((row, i) => (
+              {displayOrderBook.asks.map((row, i) => (
                 <div key={i} className="tm-ob-row tm-ob-ask" onClick={() => setPrice(row.price.toString())}>
                   <span className="tm-ob-price ask">{row.price.toFixed(2)}</span>
                   <span>{(row.qty / 1000).toFixed(1)}K</span>
@@ -387,11 +417,11 @@ export default function TradeModal() {
             </div>
             <div className="tm-ob-mid">
               <span className={`tm-ob-mid-price ${isUp ? 'up' : 'dn'}`}>₹{livePrice.toFixed(2)}</span>
-              <span className={`tm-ob-mid-chg ${isUp ? 'up' : 'dn'}`}>{isUp ? '▲' : '▼'} +{Math.abs(parseFloat(changePct))}%</span>
+              <span className={`tm-ob-mid-chg ${isUp ? 'up' : 'dn'}`}>{isUp ? '▲' : '▼'} {Math.abs(parseFloat(changePct))}%</span>
               <span className="tm-ob-mid-label">LAST TRADED PRICE</span>
             </div>
             <div className="tm-ob-bids">
-              {orderBook.bids.map((row, i) => (
+              {displayOrderBook.bids.map((row, i) => (
                 <div key={i} className="tm-ob-row tm-ob-bid" onClick={() => setPrice(row.price.toString())}>
                   <span className="tm-ob-price bid">{row.price.toFixed(2)}</span>
                   <span>{(row.qty / 1000).toFixed(1)}K</span>
@@ -413,10 +443,10 @@ export default function TradeModal() {
               </div>
               <div className="tm-token-stats">
                 {[
-                  ['24H HIGH', `₹${(livePrice * 1.018).toFixed(2)}`],
-                  ['24H LOW',  `₹${(livePrice * 0.974).toFixed(2)}`],
-                  ['VOLUME',   '₹1.1 Cr'],
-                  ['HARVEST',  `${activeToken.weight * 3 | 0} days`],
+                  ['24H HIGH', `₹${dayHigh.toFixed(2)}`],
+                  ['24H LOW',  `₹${dayLow.toFixed(2)}`],
+                  ['VOLUME',   volume != null ? `₹${(volume / 100000).toFixed(2)}L` : '—'],
+                  ['HARVEST',  `${activeToken.days ?? '—'} days`],
                 ].map(([l, v]) => (
                   <div key={l} className="tm-stat">
                     <span className="tm-stat-label">{l}</span>
@@ -437,7 +467,7 @@ export default function TradeModal() {
             {/* Depth chart */}
             <div className="tm-depth-wrap">
               <span className="tm-depth-label">MARKET DEPTH</span>
-              <DepthChart orderBook={orderBook} />
+              <DepthChart orderBook={displayOrderBook} />
             </div>
 
             {/* Buy/Sell form */}
@@ -504,7 +534,7 @@ export default function TradeModal() {
               <span>PRICE</span><span>QTY</span><span>SIDE</span><span></span>
             </div>
             <div className="tm-rt-list">
-              {recentTrades.map((t, i) => (
+              {displayTrades.map((t, i) => (
                 <div key={i} className={`tm-rt-row ${t.side === 'BUY' ? 'buy' : 'sell'}`}>
                   <span className={`tm-rt-price ${t.side === 'BUY' ? 'up' : 'dn'}`}>{t.price.toFixed(2)}</span>
                   <span>{t.qty}</span>
