@@ -90,6 +90,7 @@ export function AppProvider({ children }) {
   const [farmerModal, setFarmerModal] = useState(false);
   const [investorModal, setInvestorModal] = useState(false);
   const [tradeOpen, setTradeOpen] = useState(false);
+  const [tradeSymbol, setTradeSymbol] = useState(null); // which token TradeModal should open on
   const [priceAlertsOpen, setPriceAlertsOpen] = useState(false);
   const [yieldCalcOpen, setYieldCalcOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -249,27 +250,31 @@ export function AppProvider({ children }) {
         showToast('Watchlist Error', err.message);
       }
     } else {
+      const symbol = crop.tokenSymbol || crop.symbol || crop.id;
       setWatchlist(prev => {
-        if (prev.includes(crop.id)) {
+        if (prev.includes(symbol)) {
           showToast('Removed from Watchlist', crop.name);
-          return prev.filter(id => id !== crop.id);
+          return prev.filter(s => s !== symbol);
         }
         showToast('Added to Watchlist', crop.name);
-        return [...prev, crop.id];
+        return [...prev, symbol];
       });
     }
   }, [user, watchlist, fetchWatchlist, showToast]);
 
+  // Opens TradeModal on the token the user actually clicked. If they're not
+  // connected yet, prompt wallet connect first rather than opening a trade
+  // screen they can't act on.
   const handleInvest = useCallback((crop) => {
     if (!connected) {
       setWalletOpen(true);
-    } else {
-      showToast(
-        `Trade Opened · ${crop.name}`,
-        `Token: ${crop.tokenSymbol} · Price: ${crop.tokenPrice}`
-      );
+      return;
     }
-  }, [connected, showToast]);
+    const symbol = crop?.tokenSymbol || crop?.symbol;
+    if (symbol) setTradeSymbol(symbol);
+    setCropDetail(null);
+    setTradeOpen(true);
+  }, [connected]);
 
   const removeFromWatchlist = useCallback(async (symbolOrId) => {
     if (user) {
@@ -320,6 +325,7 @@ export function AppProvider({ children }) {
     farmerModal, setFarmerModal,
     investorModal, setInvestorModal,
     tradeOpen, setTradeOpen,
+    tradeSymbol, setTradeSymbol,
     priceAlertsOpen, setPriceAlertsOpen,
     yieldCalcOpen, setYieldCalcOpen,
     notifOpen, setNotifOpen,
