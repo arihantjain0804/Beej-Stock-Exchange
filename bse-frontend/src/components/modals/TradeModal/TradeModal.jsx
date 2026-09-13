@@ -225,7 +225,6 @@ export default function TradeModal() {
 
   const [tf, setTf] = useState('1D');
   const [side, setSide] = useState('BUY');
-  const [price, setPrice] = useState('');
   const [qty, setQty] = useState('');
 
   const [orderBook, setOrderBook] = useState({ bids: [], asks: [] });
@@ -271,7 +270,6 @@ export default function TradeModal() {
 
   useEffect(() => {
     if (!tradeOpen || !activeSymbol) return;
-    setPrice('');
     setQty('');
     loadMarketData(activeSymbol);
   }, [tradeOpen, activeSymbol, loadMarketData]);
@@ -298,7 +296,7 @@ export default function TradeModal() {
   const change = livePrice - prevPrice;
   const changePct = prevPrice ? ((change / prevPrice) * 100).toFixed(2) : '0.00';
   const isUp = change >= 0;
-  const orderTotal = price && qty ? (parseFloat(price) * parseFloat(qty)).toFixed(2) : '0.00';
+  const orderTotal = qty ? (livePrice * parseFloat(qty)).toFixed(2) : '0.00';
 
   // Real price history if this token has any recorded trades/history yet;
   // otherwise fall back to an illustrative simulated series.
@@ -326,30 +324,36 @@ export default function TradeModal() {
 
   const handlePlaceOrder = async () => {
     if (!qty || parseFloat(qty) <= 0) return;
-    const p = price || livePrice.toFixed(2);
 
     if (!connected) {
       setWalletOpen(true);
       return;
     }
 
-    const orderType = price ? 'limit' : 'market';
+    // Always a market order: it fills instantly at current_price_inr on the
+    // backend and immediately updates portfolio_holdings + transactions.
+    // (A limit order only fills against an opposing limit order from another
+    // user — with no real counterparties yet, those would sit open forever,
+    // which is why orders used to "place" but never show up anywhere.)
+    const p = livePrice;
 
     setOrderLoading(true);
     try {
-      await ordersApi.place({
-        symbol:    activeToken.symbol,
-        side:      side.toLowerCase(),
-        type:      orderType,
-        quantity:  parseInt(qty),
-        price_inr: orderType === 'limit' ? parseFloat(p) : undefined,
+      const res = await ordersApi.place({
+        symbol:   activeToken.symbol,
+        side:     side.toLowerCase(),
+        type:     'market',
+        quantity: parseInt(qty),
       });
+      const pnl = res?.data?.realized_pnl_this_trade;
+      const pnlLine = side === 'SELL' && pnl != null
+        ? ` · ${pnl >= 0 ? 'Profit' : 'Loss'} ₹${Math.abs(pnl).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+        : '';
       showToast(
-        `Order ${side === 'BUY' ? 'Filled ✓' : 'Placed'}`,
-        `${activeToken.symbol} ${side} ₹${p} × ${qty} tokens · Total ₹${(parseFloat(p) * parseFloat(qty)).toLocaleString('en-IN')}`
+        `Order Filled ✓`,
+        `${activeToken.symbol} ${side} ₹${p.toFixed(2)} × ${qty} tokens · Total ₹${(p * parseFloat(qty)).toLocaleString('en-IN')}${pnlLine}`
       );
       setQty('');
-      setPrice('');
       // Refresh real order book / trades to reflect the new order.
       loadMarketData(activeToken.symbol);
     } catch (err) {
@@ -408,7 +412,7 @@ export default function TradeModal() {
             </div>
             <div className="tm-ob-asks">
               {displayOrderBook.asks.map((row, i) => (
-                <div key={i} className="tm-ob-row tm-ob-ask" onClick={() => setPrice(row.price.toString())}>
+                <div key={i} className="tm-ob-row tm-ob-ask">
                   <span className="tm-ob-price ask">{row.price.toFixed(2)}</span>
                   <span>{(row.qty / 1000).toFixed(1)}K</span>
                   <span>{(row.price * row.qty / 1000).toFixed(1)}K</span>
@@ -422,7 +426,7 @@ export default function TradeModal() {
             </div>
             <div className="tm-ob-bids">
               {displayOrderBook.bids.map((row, i) => (
-                <div key={i} className="tm-ob-row tm-ob-bid" onClick={() => setPrice(row.price.toString())}>
+                <div key={i} className="tm-ob-row tm-ob-bid">
                   <span className="tm-ob-price bid">{row.price.toFixed(2)}</span>
                   <span>{(row.qty / 1000).toFixed(1)}K</span>
                   <span>{(row.price * row.qty / 1000).toFixed(1)}K</span>
@@ -485,16 +489,12 @@ export default function TradeModal() {
 
               <div className="tm-form-row">
                 <div className="tm-field">
-                  <label className="tm-field-label">PRICE PER TOKEN (₹)</label>
+                  <label className="tm-field-label">MARKET PRICE (₹)</label>
                   <div className="tm-field-input-wrap">
                     <span className="tm-field-prefix">₹</span>
-                    <input
-                      className="tm-field-input"
-                      type="number"
-                      placeholder={livePrice.toFixed(2)}
-                      value={price}
-                      onChange={e => setPrice(e.target.value)}
-                    />
+                    <span className="tm-field-input" style={{ opacity: 0.85 }}>
+                      {livePrice.toFixed(2)}
+                    </span>
                   </div>
                 </div>
                 <div className="tm-field">

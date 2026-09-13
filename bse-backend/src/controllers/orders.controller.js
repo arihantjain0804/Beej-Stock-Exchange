@@ -31,6 +31,7 @@ const placeOrder = async (req, res) => {
       ? parseFloat(token.current_price_inr)
       : parseFloat(price_inr);
     const totalCost = fillPrice * quantity;
+    let tradeRealizedPnl = null; // only set for sells; used in the response + transaction note
 
     // ── Pre-checks ─────────────────────────────────────────────────────────
     if (side === 'buy') {
@@ -55,7 +56,7 @@ const placeOrder = async (req, res) => {
 
     if (side === 'sell') {
       const holdingRes = await tx.query(
-        'SELECT quantity FROM portfolio_holdings WHERE user_id=$1 AND token_id=$2',
+        'SELECT quantity, avg_cost_inr FROM portfolio_holdings WHERE user_id=$1 AND token_id=$2',
         [userId, token.id]
       );
       const held = holdingRes.rows[0]?.quantity || 0;
@@ -67,11 +68,15 @@ const placeOrder = async (req, res) => {
           'INSUFFICIENT_TOKENS'
         );
       }
+      const avgCost = parseFloat(holdingRes.rows[0]?.avg_cost_inr || 0);
+      tradeRealizedPnl = (fillPrice - avgCost) * quantity;
       await tx.query(
         `UPDATE portfolio_holdings
-         SET quantity = quantity - $1, updated_at = NOW()
+         SET quantity     = quantity - $1,
+             realized_pnl = realized_pnl + $4,
+             updated_at   = NOW()
          WHERE user_id = $2 AND token_id = $3`,
-        [quantity, userId, token.id]
+        [quantity, userId, token.id, tradeRealizedPnl]
       );
     }
 
@@ -122,12 +127,15 @@ const placeOrder = async (req, res) => {
         const balRes = await tx.query(
           'SELECT wallet_balance FROM users WHERE id=$1', [userId]
         );
+        const pnlLabel = tradeRealizedPnl >= 0
+          ? `+₹${tradeRealizedPnl.toFixed(2)} profit`
+          : `-₹${Math.abs(tradeRealizedPnl).toFixed(2)} loss`;
         await tx.query(
           `INSERT INTO transactions
              (user_id, type, amount_inr, token_id, token_quantity, reference_id, description, balance_after)
            VALUES ($1,'secondary_sell',$2,$3,$4,$5,$6,$7)`,
           [userId, totalCost, token.id, quantity, order.id,
-           `SELL ${quantity} × ${symbol} @ ₹${fillPrice.toFixed(2)}`,
+           `SELL ${quantity} × ${symbol} @ ₹${fillPrice.toFixed(2)} (${pnlLabel})`,
            balRes.rows[0].wallet_balance]
         );
       }
@@ -139,7 +147,7 @@ const placeOrder = async (req, res) => {
     }
 
     logger.info('Order placed', { userId, symbol, side, type, quantity, status: order.status });
-    return created(res, order);
+    return created(res, { ...order, realized_pnl_this_trade: tradeRealizedPnl });
   });
 };
 

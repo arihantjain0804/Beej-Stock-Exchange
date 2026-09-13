@@ -190,9 +190,9 @@ export default function PortfolioDrawer() {
                   </div>
                 ) : (
                   transactions.map(tx => {
-                    const isCredit = ['sell', 'dividend', 'refund'].includes(tx.type);
-                    const dot = tx.type === 'buy' ? 'green'
-                      : tx.type === 'sell' ? 'ember'
+                    const isCredit = ['secondary_sell', 'refund', 'dividend'].includes(tx.type);
+                    const dot = tx.type === 'secondary_buy' ? 'green'
+                      : tx.type === 'secondary_sell' ? 'ember'
                       : 'harvest';
                     return (
                       <div key={tx.id} className="pf-activity-item">
