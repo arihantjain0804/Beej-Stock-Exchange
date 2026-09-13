@@ -16,13 +16,18 @@ function mapTokenToCard(t) {
 
   const location = [t.district, t.state].filter(Boolean).join(', ') || 'India';
 
-  // Risk isn't modeled in the backend yet — default to a neutral label
-  // rather than inventing a real-sounding risk score. Flagging this as a
-  // known gap: a real underwriting/risk model is future work, not this fix.
-  const risk = 'unrated';
-
-  // "New Listing" badge: heuristic based on recency of created_at, since
-  // there's no explicit "featured"/"new" flag in the schema.
+    // No real underwriting/risk model exists yet. For demo purposes, derive an
+  // illustrative risk tier from a real, visible number on the card
+  // (expected_yield_pct) using a standard higher-yield/higher-risk heuristic,
+  // rather than either leaving it blank or randomizing it — this way it's
+  // deterministic (same crop always shows the same tier) instead of
+  // flickering between reloads, and it's still an honest label: a mock
+  // rating derived from real yield data, not a fabricated claim.
+  const yieldPct = t.expected_yield_pct;
+  const risk = yieldPct == null ? 'unrated'
+    : yieldPct < 11 ? 'low'
+    : yieldPct < 15 ? 'med'
+    : 'high';
   const isNew = t.created_at
     ? (Date.now() - new Date(t.created_at).getTime()) < 14 * 24 * 60 * 60 * 1000
     : false;

@@ -206,7 +206,7 @@ export default function CropDetailModal() {
   return (
     <div className="crop-modal-backdrop open" onClick={(e) => e.target === e.currentTarget && handleClose()}>
       <div
-        className={`cem-shell ${cropDetail.risk === "med" ? "risk-med" : ""}`}
+        className={`cem-shell ${cropDetail.risk === "med" || cropDetail.risk === "high" ? "risk-med" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={cropDetail.name}
@@ -219,8 +219,8 @@ export default function CropDetailModal() {
             <p className="cem-crop-variety">{cropDetail.variety}</p>
           </div>
           <div className="cem-header-right">
-            <span className={`cem-risk-badge ${cropDetail.risk === "med" ? "cem-risk-med" : cropDetail.risk === "unrated" ? "cem-risk-unrated" : "cem-risk-low"}`}>
-              {cropDetail.risk === "med" ? "MED RISK" : cropDetail.risk === "unrated" ? "UNRATED" : "LOW RISK"}
+              <span className={`cem-risk-badge ${cropDetail.risk === "high" ? "cem-risk-high" : cropDetail.risk === "med" ? "cem-risk-med" : cropDetail.risk === "unrated" ? "cem-risk-unrated" : "cem-risk-low"}`}>
+              {cropDetail.risk === "high" ? "HIGH RISK" : cropDetail.risk === "med" ? "MED RISK" : cropDetail.risk === "unrated" ? "UNRATED" : "LOW RISK"}
             </span>
             <button className="cem-close" onClick={handleClose}>✕</button>
           </div>

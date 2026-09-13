@@ -1,6 +1,49 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { BSI_CONSTITUENTS } from '../../data/tokens';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useAppContext } from '../../context/AppContext';
+import { beej50Api, tokensApi } from '../../api/index';
 import './Beej-Index.css';
+
+// ─── Honesty note ────────────────────────────────────────────────────────────
+// Constituents, prices, weights, and sector mix below are all computed from
+// real crop_tokens data (current_price_inr, prev_close_inr, circulating_supply,
+// crop_type, is_beej50) via AppContext — the same live-ticking `tokens` array
+// CropCards uses, fed by GET /tokens and the WS price ticker.
+//
+// crop_type → sector is a fixed classification table (not per-token invented
+// data), same pattern as the yield-based risk heuristic used in CropCards.
+// Sector colors are a fixed palette keyed by sector name, not randomised.
+//
+// The index level itself is normalised to BASE_INDEX at first load (every
+// real index needs an arbitrary base period — Nifty started at 1000 in
+// 1995) and moves from there strictly in proportion to real weighted
+// constituent price changes. Historical series come from the real
+// beej50_history / price_history tables via /beej50/history and
+// /tokens/:symbol/price-history. Where too little real history exists yet,
+// we say so in the UI instead of fabricating a chart line.
+
+const BASE_INDEX = 10000;
+
+const SECTOR_MAP = {
+  wheat: 'Cereals', rice: 'Cereals', maize: 'Cereals', basmati: 'Cereals',
+  soybean: 'Oilseeds', mustard: 'Oilseeds', groundnut: 'Oilseeds',
+  cotton: 'Cash Crops', sugarcane: 'Cash Crops',
+  'black pepper': 'Spices', pepper: 'Spices', turmeric: 'Spices', cumin: 'Spices',
+  ragi: 'Millets', jowar: 'Millets', bajra: 'Millets',
+  coconut: 'Horticulture',
+  pigeonpea: 'Pulses', gram: 'Pulses', lentil: 'Pulses',
+};
+function sectorFor(cropType) {
+  if (!cropType) return 'Other';
+  return SECTOR_MAP[cropType.toLowerCase()] || 'Other';
+}
+
+const SECTOR_COLORS = {
+  Cereals: '#C8860A', Oilseeds: '#6daf4a', 'Cash Crops': '#e07a2a',
+  Spices: '#b85020', Millets: '#c87040', Horticulture: '#50a870',
+  Pulses: '#8a6fb0', Other: '#8a8a8a',
+};
+
+const TF_DAYS = { '1D': 2, '1W': 7, '1M': 30, '3M': 90, ALL: 365 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -8,67 +51,10 @@ function fmtIndex(v) {
   return v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function genHistory(pts, vol) {
-  const data = [];
-  let v = 9800 + Math.random() * 200;
-  for (let i = 0; i < pts; i++) {
-    const d = (Math.random() - 0.468) * vol;
-    v = Math.max(v * 0.8, v + d);
-    v += (10240 - v) * 0.008;
-    data.push(Math.round(v * 100) / 100);
-  }
-  data.push(10240);
-  return data;
-}
-
-function genSparkline(basePrice) {
-  const spark = [];
-  let p = basePrice * 0.94;
-  for (let i = 0; i < 20; i++) {
-    p += (Math.random() - 0.5) * basePrice * 0.006;
-    p = p + (basePrice - p) * 0.05;
-    spark.push(Math.round(p * 100) / 100);
-  }
-  spark.push(basePrice);
-  return spark;
-}
-
-// ─── Static data initialised once ───────────────────────────────────────────
-
-const BASE_INDEX = 10240;
-
-const INDEX_HISTORY = {
-  '1D':  genHistory(96,   12),
-  '1W':  genHistory(168,  22),
-  '1M':  genHistory(720,  35),
-  '3M':  genHistory(2160, 55),
-  'ALL': genHistory(4320, 80),
-};
-
-// Mutable constituent state (price + sparkline walk live)
-const LIVE = BSI_CONSTITUENTS.map(c => ({
-  ...c,
-  price: c.basePrice,
-  sparkline: genSparkline(c.basePrice),
-  get change() {
-    return ((this.price - this.sparkline[0]) / this.sparkline[0] * 100);
-  },
-}));
-
-// Build sectors from constituents
-function buildSectors(constituents) {
-  const s = {};
-  constituents.forEach(c => {
-    if (!s[c.sector]) s[c.sector] = { weight: 0, color: c.color };
-    s[c.sector].weight += c.weight;
-  });
-  return s;
-}
-
-// ─── Canvas drawing utilities ────────────────────────────────────────────────
+// ─── Canvas drawing utilities (pure rendering — no data assumptions) ────────
 
 function drawMiniChart(canvas, data) {
-  if (!canvas) return;
+  if (!canvas || data.length < 2) return;
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.offsetWidth || 380, H = canvas.offsetHeight || 130;
   canvas.width = W * dpr; canvas.height = H * dpr;
@@ -78,7 +64,7 @@ function drawMiniChart(canvas, data) {
 
   const pad = { top: 20, right: 12, bottom: 22, left: 10 };
   const cW = W - pad.left - pad.right, cH = H - pad.top - pad.bottom;
-  const minV = Math.min(...data) * 0.998, maxV = Math.max(...data) * 1.002, rng = maxV - minV;
+  const minV = Math.min(...data) * 0.998, maxV = Math.max(...data) * 1.002, rng = (maxV - minV) || 1;
   const sx = i => pad.left + (i / (data.length - 1)) * cW;
   const sy = v => pad.top + (1 - (v - minV) / rng) * cH;
 
@@ -86,14 +72,12 @@ function drawMiniChart(canvas, data) {
   const lineC = isUp ? '#5a9e40' : '#e05c1a';
   const fillS = isUp ? 'rgba(74,117,53,0.16)' : 'rgba(224,92,26,0.13)';
 
-  // Grid
   ctx.strokeStyle = 'rgba(200,134,10,0.06)'; ctx.lineWidth = 1;
   for (let i = 1; i <= 2; i++) {
     const y = pad.top + (i / 3) * cH;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
   }
 
-  // Area fill
   const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
   grad.addColorStop(0, fillS); grad.addColorStop(1, 'rgba(14,11,5,0)');
   ctx.beginPath();
@@ -103,33 +87,23 @@ function drawMiniChart(canvas, data) {
   ctx.lineTo(sx(0), pad.top + cH);
   ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
 
-  // Line
   ctx.beginPath();
   ctx.moveTo(sx(0), sy(data[0]));
   for (let i = 1; i < data.length; i++) ctx.lineTo(sx(i), sy(data[i]));
   ctx.strokeStyle = lineC; ctx.lineWidth = 1.8; ctx.stroke();
 
-  // Endpoint dot
   const ex = sx(data.length - 1), ey = sy(data[data.length - 1]);
   ctx.beginPath(); ctx.arc(ex, ey, 3.5, 0, Math.PI * 2);
   ctx.fillStyle = lineC; ctx.fill();
-
-  // X labels
-  ctx.font = '9px JetBrains Mono, monospace';
-  ctx.fillStyle = 'rgba(212,200,154,0.2)';
-  ctx.textAlign = 'center';
-  ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00'].forEach((lbl, i) => {
-    ctx.fillText(lbl, pad.left + (i / 5) * cW, H - 4);
-  });
 }
 
 function drawSparkline(canvas, data, up) {
-  if (!canvas) return;
+  if (!canvas || !data || data.length < 2) return;
   const W = 70, H = 24, dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
-  const minV = Math.min(...data), maxV = Math.max(...data), rng = maxV - minV || 1;
+  const minV = Math.min(...data), maxV = Math.max(...data), rng = (maxV - minV) || 1;
   const sx = i => 2 + (i / (data.length - 1)) * (W - 4);
   const sy = v => 2 + (1 - (v - minV) / rng) * (H - 4);
   ctx.beginPath();
@@ -147,7 +121,7 @@ function drawRing(canvas, sectors, hoveredSector, ringValEl) {
   const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
   const cx = S / 2, cy = S / 2, r = 72, inner = 48;
   let startAngle = -Math.PI / 2;
-  const total = Object.values(sectors).reduce((s, v) => s + v.weight, 0);
+  const total = Object.values(sectors).reduce((s, v) => s + v.weight, 0) || 1;
   const slices = [];
 
   Object.entries(sectors).forEach(([name, sec]) => {
@@ -183,7 +157,7 @@ function drawRing(canvas, sectors, hoveredSector, ringValEl) {
 }
 
 function drawBigChart(canvas, data, hoverX, modalValEl) {
-  if (!canvas) return;
+  if (!canvas || data.length < 2) return;
   const rect = canvas.parentElement.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
   const W = rect.width, H = rect.height;
@@ -193,7 +167,7 @@ function drawBigChart(canvas, data, hoverX, modalValEl) {
 
   const pad = { top: 30, right: 60, bottom: 36, left: 16 };
   const cW = W - pad.left - pad.right, cH = H - pad.top - pad.bottom;
-  const minV = Math.min(...data) * 0.997, maxV = Math.max(...data) * 1.003, rng = maxV - minV;
+  const minV = Math.min(...data) * 0.997, maxV = Math.max(...data) * 1.003, rng = (maxV - minV) || 1;
   const sx = i => pad.left + (i / (data.length - 1)) * cW;
   const sy = v => pad.top + (1 - (v - minV) / rng) * cH;
 
@@ -201,7 +175,6 @@ function drawBigChart(canvas, data, hoverX, modalValEl) {
   const lineC = isUp ? '#5a9e40' : '#e05c1a';
   const fillS = isUp ? 'rgba(74,117,53,0.14)' : 'rgba(224,92,26,0.11)';
 
-  // Grid + Y labels
   for (let i = 1; i <= 5; i++) {
     const y = pad.top + (i / 6) * cH;
     const v = maxV - (i / 6) * rng;
@@ -213,7 +186,6 @@ function drawBigChart(canvas, data, hoverX, modalValEl) {
     ctx.fillText(fmtIndex(v), W - pad.right + 4, y + 3);
   }
 
-  // Area fill
   const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + cH);
   grad.addColorStop(0, fillS); grad.addColorStop(1, 'rgba(14,11,5,0)');
   ctx.beginPath();
@@ -223,13 +195,11 @@ function drawBigChart(canvas, data, hoverX, modalValEl) {
   ctx.lineTo(sx(0), pad.top + cH);
   ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
 
-  // Line
   ctx.beginPath();
   ctx.moveTo(sx(0), sy(data[0]));
   for (let i = 1; i < data.length; i++) ctx.lineTo(sx(i), sy(data[i]));
   ctx.strokeStyle = lineC; ctx.lineWidth = 1.8; ctx.stroke();
 
-  // Hover crosshair
   if (hoverX >= pad.left && hoverX <= W - pad.right) {
     const idx = Math.round((hoverX - pad.left) / cW * (data.length - 1));
     const clamped = Math.max(0, Math.min(data.length - 1, idx));
@@ -256,110 +226,211 @@ function drawBigChart(canvas, data, hoverX, modalValEl) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function BeejIndex() {
-  const [modalOpen, setModalOpen]   = useState(false);
-  const [modalTF, setModalTF]       = useState('1D');
-  const [sortMode, setSortMode]     = useState('weight');
-  const [currentIndex, setCurrentIndex] = useState(BASE_INDEX);
-  const [liveData, setLiveData]     = useState(LIVE);
+  const { tokens } = useAppContext();
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTF, setModalTF] = useState('1D');
+  const [sortMode, setSortMode] = useState('weight');
   const [hoveredSector, setHoveredSector] = useState(null);
 
+  // Real historical series (beej50_history), keyed by timeframe once fetched.
+  const [historyByTF, setHistoryByTF] = useState({});
+  const [heroHistory, setHeroHistory] = useState([]); // for the small hero chart
+  const [allTimeStats, setAllTimeStats] = useState({ ath: null, seasonStart: null, seasonLow: null });
+
+  // Real per-token price history (price_history), keyed by symbol, for tile sparklines.
+  const [sparklines, setSparklines] = useState({});
+
+  const baseMcapRef = useRef(null); // normalises index level on first real data
+  const fetchedSymbolsRef = useRef(new Set());
+
   // Refs for canvas elements
-  const miniRef     = useRef(null);
-  const ringRef     = useRef(null);
-  const bigRef      = useRef(null);
-  const ringValRef  = useRef(null);
+  const miniRef = useRef(null);
+  const ringRef = useRef(null);
+  const bigRef = useRef(null);
+  const ringValRef = useRef(null);
   const modalValRef = useRef(null);
   const ringSlicesRef = useRef([]);
-  const hoverXRef   = useRef(-1);
-  const constitRef  = useRef(null);
+  const hoverXRef = useRef(-1);
+  const constitRef = useRef(null);
 
-  const sectors = buildSectors(BSI_CONSTITUENTS);
-
-  // ── Compute header values ──────────────────────────────────
-  const hist1D  = INDEX_HISTORY['1D'];
-  const chgPct  = ((currentIndex - hist1D[0]) / hist1D[0] * 100);
-  const isUp    = chgPct >= 0;
-  const allHist = INDEX_HISTORY['ALL'];
-  const ath     = Math.max(...allHist);
-  const seasonStart = allHist[0];
-  const mcap    = (currentIndex * 8240 / 1e7).toFixed(1);
-
-  // ── Live tick ──────────────────────────────────────────────
-  useEffect(() => {
-    const id = setInterval(() => {
-      setCurrentIndex(prev => {
-        const delta = (Math.random() - 0.482) * 18;
-        let next = Math.round((prev + delta) * 100) / 100;
-        next = next + (BASE_INDEX - next) * 0.003;
-
-        INDEX_HISTORY['1D'].push(next);
-        if (INDEX_HISTORY['1D'].length > 200) INDEX_HISTORY['1D'].shift();
-
-        return next;
+  // ── Real constituents: only tokens flagged is_beej50 in the DB ───────────
+  const constituents = useMemo(() => {
+    const raw = tokens
+      .filter(t => t.is_beej50)
+      .map(t => {
+        const price = t.price ?? 0;
+        const prevPrice = t.prevPrice ?? price;
+        const supply = t.circulating_supply || 0;
+        const marketCap = price * supply;
+        const change = prevPrice ? ((price - prevPrice) / prevPrice) * 100 : 0;
+        const sector = sectorFor(t.crop_type);
+        return {
+          symbol: t.symbol,
+          name: t.crop || t.name,
+          region: t.region || t.state || '',
+          price, prevPrice, supply, marketCap, change, sector,
+          color: SECTOR_COLORS[sector],
+        };
       });
+    const totalMcap = raw.reduce((s, c) => s + c.marketCap, 0) || 1;
+    return raw.map(c => ({ ...c, weight: (c.marketCap / totalMcap) * 100 }));
+  }, [tokens]);
 
-      setLiveData(prev => prev.map(c => {
-        const d = (Math.random() - 0.49) * c.basePrice * 0.003;
-        let newPrice = Math.round((c.price + d) * 100) / 100;
-        newPrice = newPrice + (c.basePrice - newPrice) * 0.01;
-        const newSpark = [...c.sparkline, newPrice];
-        if (newSpark.length > 21) newSpark.shift();
-        return { ...c, price: newPrice, sparkline: newSpark };
-      }));
-    }, 3500);
-    return () => clearInterval(id);
+  const totalMcap = useMemo(() => constituents.reduce((s, c) => s + c.marketCap, 0), [constituents]);
+  const totalPrevMcap = useMemo(
+    () => constituents.reduce((s, c) => s + c.prevPrice * c.supply, 0),
+    [constituents]
+  );
+
+  // Normalise index base the first time we have real, non-zero market cap.
+  useEffect(() => {
+    if (baseMcapRef.current == null && totalMcap > 0) {
+      baseMcapRef.current = totalMcap;
+    }
+  }, [totalMcap]);
+
+  const currentIndex = baseMcapRef.current
+    ? BASE_INDEX * (totalMcap / baseMcapRef.current)
+    : BASE_INDEX;
+  const prevIndex = baseMcapRef.current && totalPrevMcap
+    ? BASE_INDEX * (totalPrevMcap / baseMcapRef.current)
+    : currentIndex;
+  const chgPct = prevIndex ? ((currentIndex - prevIndex) / prevIndex) * 100 : 0;
+  const isUp = chgPct >= 0;
+  const mcap = (totalMcap / 1e7).toFixed(1);
+  const avgYield = useMemo(() => {
+    const yields = tokens.filter(t => t.is_beej50 && t.expected_yield_pct != null).map(t => t.expected_yield_pct);
+    if (!yields.length) return null;
+    return (yields.reduce((a, b) => a + b, 0) / yields.length).toFixed(1);
+  }, [tokens]);
+
+  // ── Sectors for the ring (built from real constituent weights) ──────────
+  const sectors = useMemo(() => {
+    const s = {};
+    constituents.forEach(c => {
+      if (!s[c.sector]) s[c.sector] = { weight: 0, color: c.color };
+      s[c.sector].weight += c.weight;
+    });
+    return s;
+  }, [constituents]);
+
+  // ── Fetch real historical index series (once per timeframe requested) ───
+  useEffect(() => {
+    beej50Api.history(TF_DAYS.ALL)
+      .then(res => {
+        const rows = res.data || [];
+        setHistoryByTF(prev => ({ ...prev, ALL: rows }));
+        setHeroHistory(rows.slice(-TF_DAYS['1D']));
+        if (rows.length) {
+          const values = rows.map(r => parseFloat(r.value));
+          setAllTimeStats({
+            ath: Math.max(...values),
+            seasonStart: values[0],
+            seasonLow: Math.min(...values),
+          });
+        }
+      })
+      .catch(err => console.error('BEEJ-50 history fetch failed', err));
   }, []);
 
-  // ── Redraw mini chart ──────────────────────────────────────
   useEffect(() => {
-    drawMiniChart(miniRef.current, INDEX_HISTORY['1D']);
-  }, [currentIndex]);
+    if (!modalOpen) return;
+    if (historyByTF[modalTF]) return; // already have it (ALL pre-fetched covers everything)
+    beej50Api.history(TF_DAYS[modalTF])
+      .then(res => setHistoryByTF(prev => ({ ...prev, [modalTF]: res.data || [] })))
+      .catch(err => console.error('BEEJ-50 history fetch failed', err));
+  }, [modalOpen, modalTF, historyByTF]);
 
-  // ── Redraw ring ────────────────────────────────────────────
+  // ── Fetch real per-token price history for tile sparklines ──────────────
+  useEffect(() => {
+    const toFetch = constituents.filter(c => !fetchedSymbolsRef.current.has(c.symbol));
+    if (!toFetch.length) return;
+    toFetch.forEach(c => fetchedSymbolsRef.current.add(c.symbol));
+    toFetch.forEach(c => {
+      tokensApi.priceHistory(c.symbol, 20)
+        .then(res => {
+          const rows = res.data || [];
+          const closes = rows.map(r => parseFloat(r.close)).filter(v => !isNaN(v));
+          setSparklines(prev => ({ ...prev, [c.symbol]: closes }));
+        })
+        .catch(() => { /* leave sparkline empty — falls back to flat line below */ });
+    });
+  }, [constituents]);
+
+  // ── Chart data helpers: real history + today's live figure appended ─────
+  function seriesFor(tf) {
+    const rows = historyByTF[tf] || [];
+    const values = rows.map(r => parseFloat(r.value));
+    if (values.length && Math.abs(values[values.length - 1] - currentIndex) > 0.01) {
+      values.push(currentIndex);
+    } else if (!values.length) {
+      return [];
+    }
+    return values;
+  }
+
+  const hist1D = useMemo(() => {
+    const values = heroHistory.map(r => parseFloat(r.value));
+    if (values.length) values.push(currentIndex);
+    return values;
+  }, [heroHistory, currentIndex]);
+
+  // ── Redraw mini chart ──────────────────────────────────────────────────
+  useEffect(() => {
+    drawMiniChart(miniRef.current, hist1D);
+  }, [hist1D]);
+
+  // ── Redraw ring ──────────────────────────────────────────────────────────
   useEffect(() => {
     const slices = drawRing(ringRef.current, sectors, hoveredSector, ringValRef.current);
     if (slices) ringSlicesRef.current = slices;
-  }, [hoveredSector, currentIndex]);
+  }, [sectors, hoveredSector]);
 
-  // ── Redraw big chart ───────────────────────────────────────
+  // ── Redraw big chart ──────────────────────────────────────────────────────
+  const modalSeries = useMemo(() => seriesFor(modalTF), [historyByTF, modalTF, currentIndex]);
   useEffect(() => {
     if (modalOpen) {
       setTimeout(() => {
-        drawBigChart(bigRef.current, INDEX_HISTORY[modalTF], hoverXRef.current, modalValRef.current);
+        drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current);
       }, 60);
     }
-  }, [modalOpen, modalTF, currentIndex]);
+  }, [modalOpen, modalSeries]);
 
-  // ── Draw constituent sparklines after render ───────────────
+  // ── Draw constituent sparklines after render ────────────────────────────
   useEffect(() => {
     if (!constitRef.current) return;
     const sorted = getSorted();
     sorted.forEach(c => {
       const cvs = constitRef.current.querySelector(`canvas[data-sym="${c.symbol}"]`);
-      if (cvs) drawSparkline(cvs, c.sparkline, c.change >= 0);
+      const real = sparklines[c.symbol];
+      // Real daily closes when we have them; otherwise an honest two-point
+      // line from yesterday's close to today's price — never fabricated noise.
+      const data = real && real.length >= 2 ? [...real, c.price] : [c.prevPrice, c.price];
+      if (cvs) drawSparkline(cvs, data, c.change >= 0);
     });
   });
 
-  // ── Resize handler ─────────────────────────────────────────
+  // ── Resize handler ───────────────────────────────────────────────────────
   useEffect(() => {
     const onResize = () => {
-      drawMiniChart(miniRef.current, INDEX_HISTORY['1D']);
-      if (modalOpen) drawBigChart(bigRef.current, INDEX_HISTORY[modalTF], hoverXRef.current, modalValRef.current);
+      drawMiniChart(miniRef.current, hist1D);
+      if (modalOpen) drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [modalOpen, modalTF]);
+  }, [modalOpen, hist1D, modalSeries]);
 
-  // ── Sort helper ────────────────────────────────────────────
+  // ── Sort helper ──────────────────────────────────────────────────────────
   function getSorted() {
-    const sorted = [...liveData];
+    const sorted = [...constituents];
     if (sortMode === 'weight') sorted.sort((a, b) => b.weight - a.weight);
     else if (sortMode === 'change') sorted.sort((a, b) => b.change - a.change);
     else sorted.sort((a, b) => b.price - a.price);
     return sorted;
   }
 
-  // ── Ring mouse hit-test ────────────────────────────────────
+  // ── Ring mouse hit-test ──────────────────────────────────────────────────
   function getSectorAtPoint(mx, my) {
     const S = 180, cx = S / 2, cy = S / 2;
     const dx = mx - cx, dy = my - cy;
@@ -381,14 +452,12 @@ export default function BeejIndex() {
     return null;
   }
 
-  // ── Modal header values ────────────────────────────────────
-  const modalChgPct = ((currentIndex - hist1D[0]) / hist1D[0] * 100);
-  const modalIsUp   = modalChgPct >= 0;
-  const seasonLow   = Math.min(...allHist);
-  const modalVol    = (4.2 + Math.random() * 1.5).toFixed(1);
+  const modalChgPct = chgPct;
+  const modalIsUp = isUp;
 
   const sorted = getSorted();
-  const maxWeight = Math.max(...BSI_CONSTITUENTS.map(c => c.weight));
+  const maxWeight = Math.max(...constituents.map(c => c.weight), 1);
+  const hasEnoughHistory = modalSeries.length >= 2;
 
   return (
     <>
@@ -402,7 +471,7 @@ export default function BeejIndex() {
               <p className="bsi-eyebrow">BSE Aggregate Index · Kharif 2025</p>
               <h2 className="bsi-title">BEEJ-50<br /><em>The pulse of India's fields.</em></h2>
               <p className="bsi-subtitle">
-                A market-cap weighted index of all active crop tokens on the exchange — real yields, real soil, real returns.
+                A market-cap weighted index of active crop tokens on the exchange — real yields, real soil, real returns.
               </p>
 
               <div className="bsi-value-wrap">
@@ -418,11 +487,11 @@ export default function BeejIndex() {
               <div className="bsi-meta-row">
                 <div className="bsi-meta-stat">
                   <span className="bsi-meta-label">All-Time High</span>
-                  <span className="bsi-meta-val">{fmtIndex(ath)}</span>
+                  <span className="bsi-meta-val">{allTimeStats.ath ? fmtIndex(allTimeStats.ath) : '—'}</span>
                 </div>
                 <div className="bsi-meta-stat">
                   <span className="bsi-meta-label">Season Start</span>
-                  <span className="bsi-meta-val">{fmtIndex(seasonStart)}</span>
+                  <span className="bsi-meta-val">{allTimeStats.seasonStart ? fmtIndex(allTimeStats.seasonStart) : '—'}</span>
                 </div>
                 <div className="bsi-meta-stat">
                   <span className="bsi-meta-label">Market Cap</span>
@@ -430,7 +499,7 @@ export default function BeejIndex() {
                 </div>
                 <div className="bsi-meta-stat">
                   <span className="bsi-meta-label">Constituents</span>
-                  <span className="bsi-meta-val">{BSI_CONSTITUENTS.length} Tokens</span>
+                  <span className="bsi-meta-val">{constituents.length} Tokens</span>
                 </div>
               </div>
             </div>
@@ -483,7 +552,6 @@ export default function BeejIndex() {
                   style={{ animationDelay: `${i * 0.04}s` }}
                   onClick={() => setModalOpen(true)}
                 >
-                  {/* Weight bar */}
                   <div
                     className="bsi-c-bar"
                     style={{
@@ -514,6 +582,9 @@ export default function BeejIndex() {
                 </div>
               );
             })}
+            {!constituents.length && (
+              <p className="bsi-c-region" style={{ padding: '1rem 0' }}>No BEEJ-50 constituents flagged yet.</p>
+            )}
           </div>
 
           {/* Sector ring + legend */}
@@ -590,23 +661,23 @@ export default function BeejIndex() {
               <div className="bsi-modal-stats">
                 <div className="bsi-modal-stat">
                   <span className="bsi-modal-stat-label">All-Time High</span>
-                  <span className="bsi-modal-stat-val">{fmtIndex(ath)}</span>
+                  <span className="bsi-modal-stat-val">{allTimeStats.ath ? fmtIndex(allTimeStats.ath) : '—'}</span>
                 </div>
                 <div className="bsi-modal-stat">
                   <span className="bsi-modal-stat-label">Season Low</span>
-                  <span className="bsi-modal-stat-val">{fmtIndex(seasonLow)}</span>
+                  <span className="bsi-modal-stat-val">{allTimeStats.seasonLow ? fmtIndex(allTimeStats.seasonLow) : '—'}</span>
                 </div>
                 <div className="bsi-modal-stat">
                   <span className="bsi-modal-stat-label">Market Cap</span>
                   <span className="bsi-modal-stat-val">₹{mcap} Cr</span>
                 </div>
                 <div className="bsi-modal-stat">
-                  <span className="bsi-modal-stat-label">24h Volume</span>
-                  <span className="bsi-modal-stat-val">₹{modalVol} Cr</span>
+                  <span className="bsi-modal-stat-label">Avg Expected Yield</span>
+                  <span className="bsi-modal-stat-val">{avgYield != null ? `${avgYield}%` : '—'}</span>
                 </div>
                 <div className="bsi-modal-stat">
                   <span className="bsi-modal-stat-label">Tokens</span>
-                  <span className="bsi-modal-stat-val">{BSI_CONSTITUENTS.length} Active</span>
+                  <span className="bsi-modal-stat-val">{constituents.length} Active</span>
                 </div>
               </div>
 
@@ -626,21 +697,27 @@ export default function BeejIndex() {
               </div>
             </div>
 
-            <canvas
-              id="bsi-big-canvas"
-              ref={bigRef}
-              style={{ cursor: 'crosshair' }}
-              onMouseMove={e => {
-                const rect = bigRef.current.getBoundingClientRect();
-                hoverXRef.current = e.clientX - rect.left;
-                drawBigChart(bigRef.current, INDEX_HISTORY[modalTF], hoverXRef.current, modalValRef.current);
-              }}
-              onMouseLeave={() => {
-                hoverXRef.current = -1;
-                if (modalValRef.current) modalValRef.current.textContent = fmtIndex(currentIndex);
-                drawBigChart(bigRef.current, INDEX_HISTORY[modalTF], -1, null);
-              }}
-            />
+            {hasEnoughHistory ? (
+              <canvas
+                id="bsi-big-canvas"
+                ref={bigRef}
+                style={{ cursor: 'crosshair' }}
+                onMouseMove={e => {
+                  const rect = bigRef.current.getBoundingClientRect();
+                  hoverXRef.current = e.clientX - rect.left;
+                  drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current);
+                }}
+                onMouseLeave={() => {
+                  hoverXRef.current = -1;
+                  if (modalValRef.current) modalValRef.current.textContent = fmtIndex(currentIndex);
+                  drawBigChart(bigRef.current, modalSeries, -1, null);
+                }}
+              />
+            ) : (
+              <p className="bsi-c-region" style={{ padding: '2rem 0', textAlign: 'center' }}>
+                Not enough historical data yet for this range — showing today's live value only.
+              </p>
+            )}
           </div>
 
           {/* Breakdown panel */}
@@ -649,9 +726,9 @@ export default function BeejIndex() {
               <div className="bsi-modal-breakdown-title">Index Composition</div>
             </div>
             <div className="bsi-modal-breakdown-list">
-              {[...liveData].sort((a, b) => b.weight - a.weight).map((c, i) => {
+              {[...constituents].sort((a, b) => b.weight - a.weight).map((c, i) => {
                 const up = c.change >= 0;
-                const mxW = Math.max(...liveData.map(x => x.weight));
+                const mxW = Math.max(...constituents.map(x => x.weight), 1);
                 return (
                   <div key={c.symbol} className="bsi-bd-row">
                     <span className="bsi-bd-rank">{i + 1}</span>
