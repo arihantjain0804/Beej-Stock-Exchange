@@ -298,11 +298,13 @@ export default function TradeModal() {
   const isUp = change >= 0;
   const orderTotal = qty ? (livePrice * parseFloat(qty)).toFixed(2) : '0.00';
 
-  // Real price history if this token has any recorded trades/history yet;
-  // otherwise fall back to an illustrative simulated series.
+  // Real price history if this token has at least 2 recorded points (a
+  // single point can't draw a line — was previously treated as "real
+  // enough," which silently drew a blank/zero-length chart); otherwise
+  // fall back to an illustrative simulated series.
   const realCloses = priceHistoryRows.map(r => Number(r.close)).filter(n => !isNaN(n));
   const days = TF_DAYS[tf];
-  const history = realCloses.length
+  const history = realCloses.length >= 2
     ? realCloses.slice(-days)
     : genHistory(livePrice || 100, tf === '1D' ? 80 : tf === '1W' ? 120 : tf === '1M' ? 200 : 350);
 
