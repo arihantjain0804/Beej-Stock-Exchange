@@ -59,49 +59,52 @@ async function fetchRealPrices() {
   lastCommodityFetch = now;
 
   try {
-    // Agmarknet modal price resource (₹/quintal)
-    const url =
-      `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070` +
-      `?api-key=${apiKey}&format=json&limit=200`;
-
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const json    = await res.json();
-    const records = json.records || [];
-
-    // Build lookup: "commodity|state" → modal price
-    const lookup = {};
-    for (const r of records) {
-      const key   = `${r.commodity?.toLowerCase()}|${r.state?.toLowerCase()}`;
-      const modal = parseFloat(r.modal_price);
-      if (!isNaN(modal) && modal > 0) lookup[key] = modal;
-    }
-
-    // Map to our token symbols
+    // Fix: the previous single unfiltered pull (`?limit=200`, no filters)
+    // returned whatever 200 records the resource happened to serve —
+    // confirmed via logs to be random unrelated commodities/states (e.g.
+    // Bottle gourd/Tripura), never our 12 target combinations, out of a
+    // dataset covering every mandi in India daily. The odds of a specific
+    // commodity+state pair landing in an unfiltered 200-row page are
+    // effectively zero. Querying per-token with the resource's actual
+    // filters[commodity]/filters[state] params targets exactly what we need.
     const updated = {};
-    for (const [symbol, { commodity, state }] of Object.entries(COMMODITY_MAP)) {
-      const key = `${commodity.toLowerCase()}|${state.toLowerCase()}`;
-      if (lookup[key]) updated[symbol] = lookup[key];
-    }
+    const entries = Object.entries(COMMODITY_MAP);
+
+    await Promise.all(entries.map(async ([symbol, { commodity, state }]) => {
+      try {
+        const url =
+          `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070` +
+          `?api-key=${apiKey}&format=json&limit=5` +
+          `&filters[commodity]=${encodeURIComponent(commodity)}` +
+          `&filters[state]=${encodeURIComponent(state)}`;
+
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) return;
+        const json = await res.json();
+        const records = json.records || [];
+        // Most recent record for this commodity/state (API returns latest first)
+        const modal = records.map(r => parseFloat(r.modal_price)).find(v => !isNaN(v) && v > 0);
+        if (modal != null) updated[symbol] = modal;
+      } catch {
+        // one symbol failing shouldn't block the others
+      }
+    }));
 
     // Fix: previously this only logged on a successful match — if the API
     // call succeeded but 0 records matched (naming mismatch, no data for
     // that commodity/state today, etc.) nothing was logged at all, making
     // "is this actually working" impossible to answer from the logs. Now
-    // always logs the real outcome, including a sample of what Agmarknet
-    // actually returned so a naming mismatch is visible immediately.
+    // always logs the real outcome, including a sample when nothing matched.
     if (Object.keys(updated).length > 0) {
       realPriceCache = { ...realPriceCache, ...updated };
       logger.info('Commodity prices refreshed from data.gov.in', {
         matched: Object.keys(updated).length,
-        total: COMMODITY_MAP && Object.keys(COMMODITY_MAP).length,
+        total: Object.keys(COMMODITY_MAP).length,
         updated: Object.keys(updated),
       });
     } else {
-      logger.warn('Commodity API responded but matched 0 symbols — check COMMODITY_MAP naming against Agmarknet', {
-        recordsReturned: records.length,
-        sample: records.slice(0, 3).map(r => ({ commodity: r.commodity, state: r.state, modal_price: r.modal_price })),
+      logger.warn('Commodity API queried per-symbol but matched 0 — check filters[commodity]/filters[state] values against Agmarknet\'s exact naming', {
+        symbolsQueried: entries.length,
       });
     }
   } catch (err) {
