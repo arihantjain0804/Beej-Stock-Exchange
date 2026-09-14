@@ -24,6 +24,14 @@ export function useLivePrices(setTokens) {
     mountedRef.current = true;
 
     // ── Fallback: random drift ────────────────────────────────────────────
+    // Fix: previously did `{ ...t, prevPrice: t.price, price: newPrice }` on
+    // every tick (every 4s). That clobbers prevPrice — which AppContext
+    // initializes once from the real prev_close_inr column — with "price a
+    // few seconds ago". Within a couple of ticks price and prevPrice
+    // converge to nearly the same number, so every 24h-change% in the app
+    // (Ticker tape, TradeModal, Beej-Index) silently rounds to ~0.00%
+    // forever. Only `price` should move on a tick; prevPrice stays pinned
+    // to the real day-open value AppContext set on load.
     function startFallback() {
       if (fallbackTimer.current) return;
       fallbackTimer.current = setInterval(() => {
@@ -35,7 +43,7 @@ export function useLivePrices(setTokens) {
               t.basePrice * 0.75,
               parseFloat((t.price + drift + noise).toFixed(2))
             );
-            return { ...t, prevPrice: t.price, price: newPrice };
+            return { ...t, price: newPrice };
           })
         );
       }, TICK_FALLBACK_MS);
@@ -83,7 +91,7 @@ export function useLivePrices(setTokens) {
                   if (!update) return t;
                   const newPrice = parseFloat(update.price);
                   if (isNaN(newPrice)) return t;
-                  return { ...t, prevPrice: t.price, price: newPrice };
+                  return { ...t, price: newPrice }; // prevPrice stays the real day-open value
                 })
               );
             }

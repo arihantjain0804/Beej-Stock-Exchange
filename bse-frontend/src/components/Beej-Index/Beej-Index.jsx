@@ -20,6 +20,15 @@ import './Beej-Index.css';
 // beej50_history / price_history tables via /beej50/history and
 // /tokens/:symbol/price-history. Where too little real history exists yet,
 // we say so in the UI instead of fabricating a chart line.
+//
+// Constituents = every token with status 'active' or 'harvested', NOT the
+// is_beej50 flag. Reason: is_beej50 is set once at insert and the seed
+// script's ON CONFLICT clause never updates it on re-seed, so production
+// data can silently drift to is_beej50=false on real, live, active tokens
+// (confirmed happened here — 12 real active tokens, 0 flagged). Filtering
+// on status is what the component's own subtitle already promises ("index
+// of active crop tokens on the exchange") and means a newly listed token
+// shows up automatically without anyone remembering to flip a flag.
 
 const BASE_INDEX = 10000;
 
@@ -43,7 +52,7 @@ const SECTOR_COLORS = {
   Pulses: '#8a6fb0', Other: '#8a8a8a',
 };
 
-const TF_DAYS = { '1D': 2, '1W': 7, '1M': 30, '3M': 90, ALL: 365 };
+const TF_COUNTS = { '1D': 2, '1W': 7, '1M': 30, '3M': 90, ALL: Infinity };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -156,7 +165,7 @@ function drawRing(canvas, sectors, hoveredSector, ringValEl) {
   return slices;
 }
 
-function drawBigChart(canvas, data, hoverX, modalValEl) {
+function drawBigChart(canvas, data, hoverX, modalValEl, fmt = fmtIndex) {
   if (!canvas || data.length < 2) return;
   const rect = canvas.parentElement.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -210,7 +219,7 @@ function drawBigChart(canvas, data, hoverX, modalValEl) {
     ctx.beginPath(); ctx.arc(cx2, cy2, 4.5, 0, Math.PI * 2);
     ctx.fillStyle = lineC; ctx.fill();
 
-    const lbl = fmtIndex(data[clamped]);
+    const lbl = fmt(data[clamped]);
     ctx.font = '500 11px JetBrains Mono, monospace';
     const lw = ctx.measureText(lbl).width + 14;
     const lx = cx2 + 10 < W - pad.right - lw ? cx2 + 10 : cx2 - lw - 4;
@@ -219,7 +228,7 @@ function drawBigChart(canvas, data, hoverX, modalValEl) {
     ctx.fillStyle = '#C8860A';
     ctx.fillText(lbl, lx + 7, cy2 + 4);
 
-    if (modalValEl) modalValEl.textContent = fmtIndex(data[clamped]);
+    if (modalValEl) modalValEl.textContent = fmt(data[clamped]);
   }
 }
 
@@ -232,13 +241,22 @@ export default function BeejIndex() {
   const [modalTF, setModalTF] = useState('1D');
   const [sortMode, setSortMode] = useState('weight');
   const [hoveredSector, setHoveredSector] = useState(null);
+  const [selectedSymbol, setSelectedSymbol] = useState(null); // per-crop drill-down; null = whole index
 
-  // Real historical series (beej50_history), keyed by timeframe once fetched.
-  const [historyByTF, setHistoryByTF] = useState({});
-  const [heroHistory, setHeroHistory] = useState([]); // for the small hero chart
+  // Real historical index series (beej50_history) — fetched once, sliced by
+  // timeframe on the client. Fix: the original per-tab fetch asked the
+  // backend for "recorded_at > NOW() - INTERVAL 'X days'", which returned
+  // nothing for 1D/1W/1M because beej50_history is only ever seeded once
+  // and its newest row is older than those windows relative to today's
+  // real date — even though the same table has plenty of real rows overall
+  // (confirmed: ALL-time stats worked, narrow-window tabs didn't). Fetching
+  // the full real series once and slicing the most recent N *points* (not
+  // N days) sidesteps the staleness entirely while staying 100% real data.
+  const [historyAll, setHistoryAll] = useState([]);
   const [allTimeStats, setAllTimeStats] = useState({ ath: null, seasonStart: null, seasonLow: null });
 
-  // Real per-token price history (price_history), keyed by symbol, for tile sparklines.
+  // Real per-token price history (price_history), keyed by symbol — used for
+  // both tile sparklines and the per-crop drill-down chart.
   const [sparklines, setSparklines] = useState({});
 
   const baseMcapRef = useRef(null); // normalises index level on first real data
@@ -254,10 +272,11 @@ export default function BeejIndex() {
   const hoverXRef = useRef(-1);
   const constitRef = useRef(null);
 
-  // ── Real constituents: only tokens flagged is_beej50 in the DB ───────────
+  // ── Real constituents: every active/harvested token in the DB ───────────
+  // (status-based, not is_beej50 — see note at top of file)
   const constituents = useMemo(() => {
     const raw = tokens
-      .filter(t => t.is_beej50)
+      .filter(t => t.status === 'active' || t.status === 'harvested')
       .map(t => {
         const price = t.price ?? 0;
         const prevPrice = t.prevPrice ?? price;
@@ -300,7 +319,9 @@ export default function BeejIndex() {
   const isUp = chgPct >= 0;
   const mcap = (totalMcap / 1e7).toFixed(1);
   const avgYield = useMemo(() => {
-    const yields = tokens.filter(t => t.is_beej50 && t.expected_yield_pct != null).map(t => t.expected_yield_pct);
+    const yields = tokens
+      .filter(t => (t.status === 'active' || t.status === 'harvested') && t.expected_yield_pct != null)
+      .map(t => t.expected_yield_pct);
     if (!yields.length) return null;
     return (yields.reduce((a, b) => a + b, 0) / yields.length).toFixed(1);
   }, [tokens]);
@@ -315,13 +336,12 @@ export default function BeejIndex() {
     return s;
   }, [constituents]);
 
-  // ── Fetch real historical index series (once per timeframe requested) ───
+  // ── Fetch real historical index series once — sliced by count per tab ───
   useEffect(() => {
-    beej50Api.history(TF_DAYS.ALL)
+    beej50Api.history(3650) // effectively "everything the table has"
       .then(res => {
         const rows = res.data || [];
-        setHistoryByTF(prev => ({ ...prev, ALL: rows }));
-        setHeroHistory(rows.slice(-TF_DAYS['1D']));
+        setHistoryAll(rows);
         if (rows.length) {
           const values = rows.map(r => parseFloat(r.value));
           setAllTimeStats({
@@ -334,21 +354,13 @@ export default function BeejIndex() {
       .catch(err => console.error('BEEJ-50 history fetch failed', err));
   }, []);
 
-  useEffect(() => {
-    if (!modalOpen) return;
-    if (historyByTF[modalTF]) return; // already have it (ALL pre-fetched covers everything)
-    beej50Api.history(TF_DAYS[modalTF])
-      .then(res => setHistoryByTF(prev => ({ ...prev, [modalTF]: res.data || [] })))
-      .catch(err => console.error('BEEJ-50 history fetch failed', err));
-  }, [modalOpen, modalTF, historyByTF]);
-
-  // ── Fetch real per-token price history for tile sparklines ──────────────
+  // ── Fetch real per-token price history for tile sparklines + drill-down ──
   useEffect(() => {
     const toFetch = constituents.filter(c => !fetchedSymbolsRef.current.has(c.symbol));
     if (!toFetch.length) return;
     toFetch.forEach(c => fetchedSymbolsRef.current.add(c.symbol));
     toFetch.forEach(c => {
-      tokensApi.priceHistory(c.symbol, 20)
+      tokensApi.priceHistory(c.symbol, 90)
         .then(res => {
           const rows = res.data || [];
           const closes = rows.map(r => parseFloat(r.close)).filter(v => !isNaN(v));
@@ -358,23 +370,33 @@ export default function BeejIndex() {
     });
   }, [constituents]);
 
-  // ── Chart data helpers: real history + today's live figure appended ─────
-  function seriesFor(tf) {
-    const rows = historyByTF[tf] || [];
-    const values = rows.map(r => parseFloat(r.value));
-    if (values.length && Math.abs(values[values.length - 1] - currentIndex) > 0.01) {
-      values.push(currentIndex);
-    } else if (!values.length) {
-      return [];
-    }
-    return values;
+  // ── Index chart data: real history, sliced by point-count per tab, with
+  // today's live computed value appended so the line connects to "now" ────
+  function indexSeriesFor(tf) {
+    const values = historyAll.map(r => parseFloat(r.value));
+    if (!values.length) return [];
+    const count = TF_COUNTS[tf];
+    const sliced = count === Infinity ? values : values.slice(-count);
+    if (Math.abs(sliced[sliced.length - 1] - currentIndex) > 0.01) sliced.push(currentIndex);
+    return sliced;
   }
 
-  const hist1D = useMemo(() => {
-    const values = heroHistory.map(r => parseFloat(r.value));
-    if (values.length) values.push(currentIndex);
-    return values;
-  }, [heroHistory, currentIndex]);
+  const hist1D = useMemo(() => indexSeriesFor('1D'), [historyAll, currentIndex]);
+
+  const selectedConstituent = useMemo(
+    () => constituents.find(c => c.symbol === selectedSymbol) || null,
+    [constituents, selectedSymbol]
+  );
+
+  // ── Per-crop chart data: real price_history closes, sliced by tab ───────
+  function cropSeriesFor(c, tf) {
+    const closes = sparklines[c.symbol] || [];
+    if (!closes.length) return [c.prevPrice, c.price];
+    const count = TF_COUNTS[tf];
+    const sliced = count === Infinity ? closes : closes.slice(-count);
+    if (Math.abs(sliced[sliced.length - 1] - c.price) > 0.01) sliced.push(c.price);
+    return sliced;
+  }
 
   // ── Redraw mini chart ──────────────────────────────────────────────────
   useEffect(() => {
@@ -387,12 +409,15 @@ export default function BeejIndex() {
     if (slices) ringSlicesRef.current = slices;
   }, [sectors, hoveredSector]);
 
-  // ── Redraw big chart ──────────────────────────────────────────────────────
-  const modalSeries = useMemo(() => seriesFor(modalTF), [historyByTF, modalTF, currentIndex]);
+  // ── Redraw big chart — index-wide or single-crop, depending on selection ─
+  const modalSeries = useMemo(
+    () => (selectedConstituent ? cropSeriesFor(selectedConstituent, modalTF) : indexSeriesFor(modalTF)),
+    [selectedConstituent, sparklines, historyAll, modalTF, currentIndex]
+  );
   useEffect(() => {
     if (modalOpen) {
       setTimeout(() => {
-        drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current);
+        drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current, fmtModalVal);
       }, 60);
     }
   }, [modalOpen, modalSeries]);
@@ -415,13 +440,17 @@ export default function BeejIndex() {
   useEffect(() => {
     const onResize = () => {
       drawMiniChart(miniRef.current, hist1D);
-      if (modalOpen) drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current);
+      if (modalOpen) drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current, fmtModalVal);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [modalOpen, hist1D, modalSeries]);
 
-  // ── Sort helper ──────────────────────────────────────────────────────────
+  // Reset the TF tab back to 1D whenever the crop selection changes, since a
+  // token's own history rarely has as much depth as the index-wide series.
+  useEffect(() => {
+    setModalTF('1D');
+  }, [selectedSymbol]);
   function getSorted() {
     const sorted = [...constituents];
     if (sortMode === 'weight') sorted.sort((a, b) => b.weight - a.weight);
@@ -452,8 +481,11 @@ export default function BeejIndex() {
     return null;
   }
 
-  const modalChgPct = chgPct;
-  const modalIsUp = isUp;
+  const modalChgPct = selectedConstituent ? selectedConstituent.change : chgPct;
+  const modalIsUp = modalChgPct >= 0;
+  const fmtModalVal = v => selectedConstituent
+    ? `₹${v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : fmtIndex(v);
 
   const sorted = getSorted();
   const maxWeight = Math.max(...constituents.map(c => c.weight), 1);
@@ -510,12 +542,12 @@ export default function BeejIndex() {
                 ref={miniRef}
                 width={380}
                 height={130}
-                onClick={() => setModalOpen(true)}
+                onClick={() => { setSelectedSymbol(null); setModalOpen(true); }}
                 style={{ cursor: 'pointer' }}
               />
               <button
                 className="bsi-expand-btn"
-                onClick={() => setModalOpen(true)}
+                onClick={() => { setSelectedSymbol(null); setModalOpen(true); }}
               >
                 ↗ EXPAND INDEX
               </button>
@@ -549,8 +581,9 @@ export default function BeejIndex() {
                 <div
                   key={c.symbol}
                   className="bsi-constituent"
-                  style={{ animationDelay: `${i * 0.04}s` }}
-                  onClick={() => setModalOpen(true)}
+                  style={{ animationDelay: `${i * 0.04}s`, cursor: 'pointer' }}
+                  onClick={() => { setSelectedSymbol(c.symbol); setModalOpen(true); }}
+                  title={`View ${c.name} (${c.symbol})`}
                 >
                   <div
                     className="bsi-c-bar"
@@ -583,7 +616,7 @@ export default function BeejIndex() {
               );
             })}
             {!constituents.length && (
-              <p className="bsi-c-region" style={{ padding: '1rem 0' }}>No BEEJ-50 constituents flagged yet.</p>
+              <p className="bsi-c-region" style={{ padding: '1rem 0' }}>No active tokens listed yet.</p>
             )}
           </div>
 
@@ -637,20 +670,45 @@ export default function BeejIndex() {
 
         <div className="bsi-modal-topbar">
           <div className="bsi-modal-brand">
-            <div className="bsi-modal-eyebrow">BSE Aggregate Index · बीज-50</div>
-            <div className="bsi-modal-title">BEEJ-50 Index</div>
+            {selectedConstituent ? (
+              <>
+                <div className="bsi-modal-eyebrow">
+                  <button
+                    onClick={() => setSelectedSymbol(null)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                      color: 'inherit', font: 'inherit', textDecoration: 'underline',
+                    }}
+                  >
+                    ← BEEJ-50 Index
+                  </button>
+                  {' · '}{selectedConstituent.sector} · {selectedConstituent.region}
+                </div>
+                <div className="bsi-modal-title">
+                  <span style={{ color: selectedConstituent.color }}>{selectedConstituent.symbol}</span>
+                  {' · '}{selectedConstituent.name}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bsi-modal-eyebrow">BSE Aggregate Index · बीज-50</div>
+                <div className="bsi-modal-title">BEEJ-50 Index</div>
+              </>
+            )}
           </div>
 
           <div className="bsi-modal-live">
             <span className="bsi-modal-val" ref={modalValRef}>
-              {fmtIndex(currentIndex)}
+              {selectedConstituent
+                ? `₹${selectedConstituent.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : fmtIndex(currentIndex)}
             </span>
             <span className={`bsi-modal-chg ${modalIsUp ? 'up' : 'down'}`}>
               {modalIsUp ? '▲ +' : '▼ '}{Math.abs(modalChgPct).toFixed(2)}%
             </span>
           </div>
 
-          <button className="bsi-modal-close" onClick={() => setModalOpen(false)}>✕</button>
+          <button className="bsi-modal-close" onClick={() => { setModalOpen(false); setSelectedSymbol(null); }}>✕</button>
         </div>
 
         <div className="bsi-modal-body">
@@ -705,11 +763,11 @@ export default function BeejIndex() {
                 onMouseMove={e => {
                   const rect = bigRef.current.getBoundingClientRect();
                   hoverXRef.current = e.clientX - rect.left;
-                  drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current);
+                  drawBigChart(bigRef.current, modalSeries, hoverXRef.current, modalValRef.current, fmtModalVal);
                 }}
                 onMouseLeave={() => {
                   hoverXRef.current = -1;
-                  if (modalValRef.current) modalValRef.current.textContent = fmtIndex(currentIndex);
+                  if (modalValRef.current) modalValRef.current.textContent = fmtModalVal(selectedConstituent ? selectedConstituent.price : currentIndex);
                   drawBigChart(bigRef.current, modalSeries, -1, null);
                 }}
               />
@@ -730,7 +788,16 @@ export default function BeejIndex() {
                 const up = c.change >= 0;
                 const mxW = Math.max(...constituents.map(x => x.weight), 1);
                 return (
-                  <div key={c.symbol} className="bsi-bd-row">
+                  <div
+                    key={c.symbol}
+                    className="bsi-bd-row"
+                    onClick={() => setSelectedSymbol(c.symbol)}
+                    style={{
+                      cursor: 'pointer',
+                      outline: selectedSymbol === c.symbol ? `1px solid ${c.color}` : 'none',
+                      borderRadius: 4,
+                    }}
+                  >
                     <span className="bsi-bd-rank">{i + 1}</span>
                     <div className="bsi-bd-dot" style={{ background: c.color }} />
                     <div className="bsi-bd-info">

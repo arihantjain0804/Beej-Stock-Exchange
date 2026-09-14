@@ -4,6 +4,17 @@ const { publishPrices } = require('../config/redis');
 const logger = require('../utils/logger');
 
 const TICK_INTERVAL = parseInt(process.env.WS_PRICE_TICK_INTERVAL_MS || 3000);
+// How often to persist a price_history row per token. Separate from
+// TICK_INTERVAL — writing every 3s would flood the table for no benefit;
+// this is the cadence that actually builds up a real, growing chart over
+// time. Fix: previously the ticker only ever updated an in-memory cache
+// and broadcast over WS — price_history was only ever written once by the
+// seed script (30 backdated days) or by an executed trade. That meant no
+// new data point was ever added while the app was just running, so every
+// timeframe tab (1D/1W/1M/3M/ALL) read the same frozen rows and looked
+// identical, and drill-down charts had nothing to plot beyond a flat
+// two-point fallback.
+const HISTORY_WRITE_INTERVAL_MS = parseInt(process.env.HISTORY_WRITE_INTERVAL_MS || 60000);
 
 // ─── Commodity Price API Integration ─────────────────────────────────────────
 // Uses data.gov.in Agmarknet API (free, no billing required).
@@ -24,7 +35,7 @@ const COMMODITY_MAP = {
   'RJ-CUM':  { commodity: 'Cumin',     state: 'Rajasthan' },
   'KAR-RGI': { commodity: 'Ragi',      state: 'Karnataka' },
   'KER-CCO': { commodity: 'Coconut',   state: 'Kerala' },
-  'AP-TRM':  { commodity: 'Turmeric',  state: 'Telangana' },
+  'AP-TRM':  { commodity: 'Turmeric',  state: 'Andhra Pradesh' },
 };
 
 const COMMODITY_REFRESH_MS = parseInt(process.env.COMMODITY_REFRESH_MS || 3600000); // 1 hour default
@@ -207,10 +218,71 @@ function createPriceServer(httpServer) {
     }
   }, TICK_INTERVAL);
 
+  let indexAnchorValue = null; // last known real beej50_history value
+  let indexAnchorMcap  = null; // total real market cap at that anchor point
+
   wss.on('close', () => {
     clearInterval(heartbeat);
     clearInterval(ticker);
+    clearInterval(historyWriter);
+    clearInterval(indexWriter);
   });
+
+  // ── Persist real price history periodically (not on every tick) ────────
+  const historyWriter = setInterval(async () => {
+    try {
+      const { rows } = await query("SELECT id FROM crop_tokens WHERE status='active'");
+      for (const t of rows) {
+        const price = priceCache.get(t.id);
+        if (price == null) continue; // no tick yet for this token
+        await query(
+          'INSERT INTO price_history (token_id, price_inr, volume, recorded_at) VALUES ($1, $2, $3, NOW())',
+          [t.id, price.toFixed(4), 0]
+        );
+      }
+    } catch (err) {
+      logger.error('Price history write error', { error: err.message });
+    }
+  }, HISTORY_WRITE_INTERVAL_MS);
+
+  // ── Persist a real, moving BEEJ-50 index value periodically ─────────────
+  // Same staleness bug as price_history: beej50_history was only ever
+  // written once by the seed script, so every timeframe tab read the same
+  // frozen rows forever. This anchors to whatever the seed left off at,
+  // then moves the index in direct proportion to real total market-cap
+  // change (price x circulating_supply, active/harvested tokens) from that
+  // point on — same convention the frontend uses for its live readout,
+  // just now actually persisted so the series really grows.
+  const indexWriter = setInterval(async () => {
+    try {
+      const { rows } = await query(
+        "SELECT current_price_inr, circulating_supply FROM crop_tokens WHERE status IN ('active','harvested')"
+      );
+      const mcap = rows.reduce(
+        (sum, t) => sum + parseFloat(t.current_price_inr) * parseFloat(t.circulating_supply || 0),
+        0
+      );
+      if (!mcap) return;
+
+      if (indexAnchorValue == null) {
+        const { rows: latest } = await query('SELECT value FROM beej50_history ORDER BY recorded_at DESC LIMIT 1');
+        indexAnchorValue = parseFloat(latest[0]?.value || 10000);
+        indexAnchorMcap = mcap;
+      }
+
+      const newValue = indexAnchorValue * (mcap / indexAnchorMcap);
+      const { rows: prevRow } = await query('SELECT value FROM beej50_history ORDER BY recorded_at DESC LIMIT 1');
+      const prevValue = parseFloat(prevRow[0]?.value || newValue);
+      const changePct = prevValue ? ((newValue - prevValue) / prevValue) * 100 : 0;
+
+      await query(
+        'INSERT INTO beej50_history (value, change_pct, recorded_at) VALUES ($1, $2, NOW())',
+        [newValue.toFixed(2), changePct.toFixed(4)]
+      );
+    } catch (err) {
+      logger.error('BEEJ-50 history write error', { error: err.message });
+    }
+  }, HISTORY_WRITE_INTERVAL_MS);
 
   // Kick off first commodity fetch immediately on server start
   fetchRealPrices().catch(() => {});

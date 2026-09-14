@@ -24,14 +24,21 @@ export default function Nav() {
   const navigate  = useNavigate();
   const { pathname } = useLocation();
 
+  // Which route a given section id actually lives on, when it's not
+  // present on the current page. 'bse-index' only exists on /markets —
+  // it was previously always routed to '/', which never had the element,
+  // so the nav link silently did nothing unless you were already on
+  // /markets. 'how' and 'trust' live on the homepage, same as before.
+  const SECTION_ROUTE = { 'bse-index': '/markets', how: '/', trust: '/' };
+
   // Scroll to a section ID — works on the current page or navigates first
   const scrollTo = (id) => {
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     } else {
-      // Not on homepage yet — go there, then scroll after render
-      navigate('/', { state: { scrollTo: id } });
+      const route = SECTION_ROUTE[id] || '/';
+      navigate(route, { state: { scrollTo: id } });
     }
   };
 
