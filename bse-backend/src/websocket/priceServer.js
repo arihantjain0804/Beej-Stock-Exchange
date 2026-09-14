@@ -42,9 +42,17 @@ const COMMODITY_REFRESH_MS = parseInt(process.env.COMMODITY_REFRESH_MS || 360000
 let realPriceCache  = {};  // { [symbol]: priceInr }
 let lastCommodityFetch = 0;
 
+let apiKeyWarned = false; // log the missing-key state once, not every 3s tick
+
 async function fetchRealPrices() {
   const apiKey = process.env.DATA_GOV_API_KEY;
-  if (!apiKey) return; // silently skip — simulation takes over
+  if (!apiKey) {
+    if (!apiKeyWarned) {
+      logger.warn('DATA_GOV_API_KEY not set in this process — using simulated prices');
+      apiKeyWarned = true;
+    }
+    return;
+  }
 
   const now = Date.now();
   if (now - lastCommodityFetch < COMMODITY_REFRESH_MS) return; // cache still fresh
@@ -77,10 +85,23 @@ async function fetchRealPrices() {
       if (lookup[key]) updated[symbol] = lookup[key];
     }
 
+    // Fix: previously this only logged on a successful match — if the API
+    // call succeeded but 0 records matched (naming mismatch, no data for
+    // that commodity/state today, etc.) nothing was logged at all, making
+    // "is this actually working" impossible to answer from the logs. Now
+    // always logs the real outcome, including a sample of what Agmarknet
+    // actually returned so a naming mismatch is visible immediately.
     if (Object.keys(updated).length > 0) {
       realPriceCache = { ...realPriceCache, ...updated };
       logger.info('Commodity prices refreshed from data.gov.in', {
+        matched: Object.keys(updated).length,
+        total: COMMODITY_MAP && Object.keys(COMMODITY_MAP).length,
         updated: Object.keys(updated),
+      });
+    } else {
+      logger.warn('Commodity API responded but matched 0 symbols — check COMMODITY_MAP naming against Agmarknet', {
+        recordsReturned: records.length,
+        sample: records.slice(0, 3).map(r => ({ commodity: r.commodity, state: r.state, modal_price: r.modal_price })),
       });
     }
   } catch (err) {
