@@ -52,6 +52,23 @@ const SECTOR_COLORS = {
   Pulses: '#8a6fb0', Other: '#8a8a8a',
 };
 
+// Module-level cache (outside the component) for per-token price history.
+// Fix: this was previously a useRef inside the component, which resets to
+// empty on every mount. Since Beej-Index unmounts and remounts every time
+// you navigate Markets <-> Home, each switch re-fetched all 12 tokens'
+// price history from scratch — confirmed via DevTools Network tab showing
+// dozens of duplicate price-history requests stacking up (each with its
+// own CORS preflight). The browser only allows ~6 concurrent connections
+// per host, so a few page switches were enough to saturate that limit and
+// starve out the actual /tokens request the page needs to render at all —
+// which is what caused "the market/home page sometimes doesn't load."
+// A short TTL (not an infinite cache) because the backend's historyWriter/
+// indexWriter genuinely add new real data every 60s — we want remounts to
+// pick that up eventually, just not re-fetch on every page switch.
+const CACHE_TTL_MS = 30000;
+const priceHistoryCache = new Map(); // symbol -> { data, ts }
+let indexHistoryCache = null;        // { rows, ts }
+
 const TF_COUNTS = { '1D': 2, '1W': 7, '1M': 30, '3M': 90, ALL: Infinity };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -260,7 +277,6 @@ export default function BeejIndex() {
   const [sparklines, setSparklines] = useState({});
 
   const baseMcapRef = useRef(null); // normalises index level on first real data
-  const fetchedSymbolsRef = useRef(new Set());
 
   // Refs for canvas elements
   const miniRef = useRef(null);
@@ -338,32 +354,53 @@ export default function BeejIndex() {
 
   // ── Fetch real historical index series once — sliced by count per tab ───
   useEffect(() => {
+    const now = Date.now();
+    if (indexHistoryCache && now - indexHistoryCache.ts < CACHE_TTL_MS) {
+      applyHistoryRows(indexHistoryCache.rows);
+      return;
+    }
     beej50Api.history(3650) // effectively "everything the table has"
       .then(res => {
         const rows = res.data || [];
-        setHistoryAll(rows);
-        if (rows.length) {
-          const values = rows.map(r => parseFloat(r.value));
-          setAllTimeStats({
-            ath: Math.max(...values),
-            seasonStart: values[0],
-            seasonLow: Math.min(...values),
-          });
-        }
+        indexHistoryCache = { rows, ts: Date.now() };
+        applyHistoryRows(rows);
       })
       .catch(err => console.error('BEEJ-50 history fetch failed', err));
+
+    function applyHistoryRows(rows) {
+      setHistoryAll(rows);
+      if (rows.length) {
+        const values = rows.map(r => parseFloat(r.value));
+        setAllTimeStats({
+          ath: Math.max(...values),
+          seasonStart: values[0],
+          seasonLow: Math.min(...values),
+        });
+      }
+    }
   }, []);
 
   // ── Fetch real per-token price history for tile sparklines + drill-down ──
+  // Rehydrate instantly from the module-level cache on every mount; only
+  // hit the network for symbols never fetched, or whose cache has expired.
   useEffect(() => {
-    const toFetch = constituents.filter(c => !fetchedSymbolsRef.current.has(c.symbol));
+    const now = Date.now();
+    const cached = {};
+    const toFetch = [];
+    constituents.forEach(c => {
+      const entry = priceHistoryCache.get(c.symbol);
+      if (entry && now - entry.ts < CACHE_TTL_MS) cached[c.symbol] = entry.data;
+      else toFetch.push(c);
+    });
+    if (Object.keys(cached).length) setSparklines(prev => ({ ...prev, ...cached }));
     if (!toFetch.length) return;
-    toFetch.forEach(c => fetchedSymbolsRef.current.add(c.symbol));
+
     toFetch.forEach(c => {
       tokensApi.priceHistory(c.symbol, 90)
         .then(res => {
           const rows = res.data || [];
           const closes = rows.map(r => parseFloat(r.close)).filter(v => !isNaN(v));
+          priceHistoryCache.set(c.symbol, { data: closes, ts: Date.now() });
           setSparklines(prev => ({ ...prev, [c.symbol]: closes }));
         })
         .catch(() => { /* leave sparkline empty — falls back to flat line below */ });

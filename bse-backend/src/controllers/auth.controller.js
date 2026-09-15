@@ -4,10 +4,18 @@ const { query } = require('../config/database');
 const redis = require('../config/redis');
 const { signAccess, signRefresh, verifyRefresh } = require('../utils/jwt');
 const { success, error, unauthorized } = require('../utils/response');
+const { sendSMS } = require('../utils/sms');
 const logger = require('../utils/logger');
 const generateOTP = () => String(Math.floor(100000 + Math.random() * 900000));
 const sendOTPValidation = [ body('phone').matches(/^\+91[6-9]\d{9}$/).withMessage('Enter a valid Indian mobile number'), validate ];
-const sendOTP = async (req, res) => { const { phone } = req.body; const otp = generateOTP(); try { await redis.setOTP(phone, otp); logger.info(`[DEV] OTP for ${phone}: ${otp}`); return success(res, { message: 'OTP sent', phone, _dev_otp: otp }); } catch (err) { return error(res, 'Failed to send OTP', 500); } };
+// Fix/feature: previously always returned the OTP directly in the response
+// (`_dev_otp`) and never sent a real SMS — the phone-OTP flow only ever
+// worked as a dev-mode bypass. Now attempts a real Twilio send first; the
+// dev-mode OTP is only included in the response when the real send didn't
+// happen (no Twilio credentials configured, or Twilio itself failed) — so
+// wiring up real credentials automatically removes the bypass, it doesn't
+// need a second code change.
+const sendOTP = async (req, res) => { const { phone } = req.body; const otp = generateOTP(); try { await redis.setOTP(phone, otp); const sent = await sendSMS(phone, `Your BSE (Beej Stock Exchange) login OTP is ${otp}. Valid for 10 minutes.`); if (sent) { logger.info(`OTP sent via SMS to ${phone}`); return success(res, { message: 'OTP sent' }); } logger.info(`[DEV] OTP for ${phone}: ${otp}`); return success(res, { message: 'OTP sent (dev mode — Twilio not configured or send failed)', phone, _dev_otp: otp }); } catch (err) { return error(res, 'Failed to send OTP', 500); } };
 const verifyOTPValidation = [ body('phone').matches(/^\+91[6-9]\d{9}$/).withMessage('Invalid phone'), body('otp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('OTP must be 6 digits'), validate ];
 const verifyOTP = async (req, res) => { const { phone, otp, role = 'investor', full_name } = req.body; const storedOTP = await redis.getOTP(phone); if (!storedOTP || storedOTP !== otp) return error(res, 'Invalid or expired OTP', 401, 'INVALID_OTP'); await redis.deleteOTP(phone); const { rows } = await query(`INSERT INTO users (phone, full_name, role) VALUES ($1,$2,$3) ON CONFLICT (phone) DO UPDATE SET last_login_at=NOW(), full_name=COALESCE(EXCLUDED.full_name,users.full_name) RETURNING id,phone,full_name,role,kyc_status,wallet_balance`, [phone, full_name || null, role]); const user = rows[0]; const payload = { sub: user.id, phone: user.phone, role: user.role }; return success(res, { user: { id: user.id, phone: user.phone, full_name: user.full_name, role: user.role, kyc_status: user.kyc_status, wallet_balance: parseFloat(user.wallet_balance) }, tokens: { access: signAccess(payload), refresh: signRefresh(payload) } }); };
 const refreshToken = async (req, res) => { const { refresh_token } = req.body; if (!refresh_token) return unauthorized(res, 'Refresh token required'); try { const payload = verifyRefresh(refresh_token); const { rows } = await query('SELECT id,phone,role,is_active FROM users WHERE id=$1', [payload.sub]); if (!rows.length || !rows[0].is_active) return unauthorized(res, 'User not found'); const user = rows[0]; return success(res, { access: signAccess({ sub: user.id, phone: user.phone, role: user.role }) }); } catch { return unauthorized(res, 'Invalid refresh token'); } };

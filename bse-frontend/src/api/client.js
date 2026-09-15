@@ -54,7 +54,14 @@ async function getAccessToken() {
 }
 
 // ─── Core Request ─────────────────────────────────────────────────────────────
-export async function request(path, options = {}) {
+// Fix: fetch() here previously had no timeout and no retry. A single
+// transient network stall (not a server problem — UptimeRobot confirms
+// 2+ days of continuous uptime) would hang this promise indefinitely,
+// leaving tokensLoading stuck `true` and pages permanently blank until a
+// manual reload issued a fresh request. That's the "sometimes the market
+// page doesn't load" symptom. Now: every request times out at 10s and,
+// for safe idempotent GETs, retries once automatically before giving up.
+export async function request(path, options = {}, attempt = 0) {
   const { auth = false, body, method = 'GET', ...rest } = options;
 
   const headers = { 'Content-Type': 'application/json', ...rest.headers };
@@ -69,10 +76,21 @@ export async function request(path, options = {}) {
     }
   }
 
-  const init = { method, headers };
+  const init = { method, headers, signal: AbortSignal.timeout(10000) };
   if (body !== undefined) init.body = JSON.stringify(body);
 
-  const res = await fetch(`${BASE}/api${path}`, { ...init });
+  let res;
+  try {
+    res = await fetch(`${BASE}/api${path}`, { ...init });
+  } catch (err) {
+    // Network failure or timeout (AbortSignal.timeout throws a TimeoutError/AbortError)
+    const isRetryable = method === 'GET' && attempt === 0;
+    if (isRetryable) {
+      await new Promise(r => setTimeout(r, 500)); // brief backoff
+      return request(path, options, attempt + 1);
+    }
+    throw new ApiError('Network error — please check your connection and try again.', 0, 'NETWORK_ERROR');
+  }
 
   // 401 — maybe token just expired, try one refresh cycle
   if (res.status === 401 && auth && !options._retried) {
