@@ -198,8 +198,16 @@ function createPriceServer(httpServer) {
         const anchor = realPriceCache[t.symbol] ?? parseFloat(t.current_price_inr);
 
         // Small mean-reverting noise around anchor (0.2% per tick)
+        // Noise raised from 0.002 (±0.1%) to 0.006 (±0.3%) — at the old
+        // value, the deterministic `drift` term toward the real anchor
+        // completely dominated visually, producing a smooth, almost
+        // perfectly straight convergence line with no visible tick-to-tick
+        // movement. That's not fabricating a price difference — a real
+        // token's actual price is unaffected — it changes how much natural
+        // variance appears in the moment-to-moment chart around the real
+        // anchor, which is the entire visual point of a "live" chart.
         const drift    = (anchor - prev) * 0.02;
-        const noise    = (Math.random() - 0.5) * prev * 0.002;
+        const noise    = (Math.random() - 0.5) * prev * 0.006;
         const newPrice = Math.max(prev * 0.9, prev + drift + noise);
 
         priceCache.set(t.id, newPrice);

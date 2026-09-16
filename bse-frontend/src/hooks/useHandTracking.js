@@ -48,11 +48,22 @@ export function useHandTracking(cursorRef) {
     wasFist: false,
     lastFistClick: 0,
     scrollDirection: null, // 'up' | 'down' | null — for cursor visual feedback
-    fxFilter: new OneEuroFilter(0.9, 0.0015),
-    fyFilter: new OneEuroFilter(0.9, 0.0015),
+    // Tuned for less jitter at rest: lower minCutoff smooths harder when
+    // the hand is nearly still (where jitter is most visible), and beta
+    // raised to the standard value from the original One Euro Filter paper
+    // for cursor-style tracking — it backs the smoothing off quickly once
+    // real movement starts, so this doesn't trade jitter for lag.
+    fxFilter: new OneEuroFilter(0.5, 0.007),
+    fyFilter: new OneEuroFilter(0.5, 0.007),
   });
 
-  const DEAD_ZONE_TOP = 0.20, DEAD_ZONE_BOTTOM = 0.80, MAX_SCROLL_SPEED = 100;
+  // Trigger zone enlarged (was top/bottom 20%, now 30%) so scroll kicks in
+  // without needing your finger right at the screen edge. Max speed raised
+  // and the ramp curve softened from squared to ^1.5 — squared kept speed
+  // near-zero until you were almost exactly at the edge, which read as
+  // unresponsive/laggy even though it was technically "working."
+  const DEAD_ZONE_TOP = 0.30, DEAD_ZONE_BOTTOM = 0.70, MAX_SCROLL_SPEED = 180;
+  const SCROLL_CURVE = 1.5;
 
   const RAW_MIN = 0.22, RAW_MAX = 0.78, COOLDOWN = 500;
   const remap = (v) => Math.max(0, Math.min(1, (v - RAW_MIN) / (RAW_MAX - RAW_MIN)));
@@ -75,11 +86,11 @@ export function useHandTracking(cursorRef) {
     let speed = 0;
     if (gazeY > DEAD_ZONE_BOTTOM) {
       const intensity = (gazeY - DEAD_ZONE_BOTTOM) / (1 - DEAD_ZONE_BOTTOM);
-      speed = intensity * intensity * MAX_SCROLL_SPEED;
+      speed = Math.pow(intensity, SCROLL_CURVE) * MAX_SCROLL_SPEED;
       s.scrollDirection = 'down';
     } else if (gazeY < DEAD_ZONE_TOP) {
       const intensity = (DEAD_ZONE_TOP - gazeY) / DEAD_ZONE_TOP;
-      speed = -intensity * intensity * MAX_SCROLL_SPEED;
+      speed = -Math.pow(intensity, SCROLL_CURVE) * MAX_SCROLL_SPEED;
       s.scrollDirection = 'up';
     } else {
       s.scrollDirection = null;
@@ -128,15 +139,47 @@ export function useHandTracking(cursorRef) {
     const s = state.current;
     try {
 
+      // Pinned to a known-working version. This was previously
+      // `@mediapipe/tasks-vision@latest` — since jsdelivr resolves
+      // `@latest` fresh on every page load, any new upstream release
+      // (MediaPipe ships these frequently) can silently change behavior
+      // or break entirely with zero commits on our side. That's almost
+      // certainly why this "worked before and then stopped" with no
+      // code change in between. Bump this deliberately, not automatically.
+      // Verified against the npm registry (registry.npmjs.org) that this is
+      // an actual published stable release, not a guess — the previous pin
+      // (0.10.22) was never published as stable, only as an RC build
+      // (0.10.22-rc.20250304), so jsdelivr had nothing to serve at that
+      // exact version and the dynamic import 404'd outright.
+      const MEDIAPIPE_VERSION = '1.0.1';
+      // Verified against the actual published package contents: as of
+      // 1.0.1, MediaPipe ships two separate bundle files —
+      // vision_bundle.js (a plain IIFE script, assigns to a global `Vision`
+      // object, has NO `export` statements) and vision_bundle.mjs (the real
+      // ES module, has `export { FilesetResolver, HandLandmarker, ... }`).
+      // Dynamic import() needs actual ESM exports to destructure from, so
+      // it must be the .mjs file — .js silently resolves every named
+      // import to undefined instead of throwing, which is why this failed
+      // with "Cannot read properties of undefined" instead of a clearer error.
       const { HandLandmarker, FilesetResolver } = await import(
-        /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.js'
+        /* @vite-ignore */ `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`
       );
       const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+        `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`
       );
       s.handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+          // Back to GPU. CPU was a defensive guess made earlier when the
+          // failure was completely silent (no error visible at all) — it
+          // was never actually confirmed to be the cause. The real bug
+          // turned out to be the version pin and bundle file, both fixed
+          // above. CPU-based detection can't sustain the 30fps detection
+          // loop below, so positions update less often with bigger jumps
+          // between them — that's the jitter. If GPU genuinely fails on a
+          // given machine, the onError path now surfaces the real message
+          // instead of failing silently, so we'll know for certain instead
+          // of guessing again.
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',
@@ -177,8 +220,11 @@ export function useHandTracking(cursorRef) {
       if (onLoad) onLoad();
 
     } catch (err) {
+      // Was: silently swallowed except for a console.warn nobody looks at
+      // mid-demo. Now passes the real error message back to the caller so
+      // it can be surfaced to the user instead of failing invisibly.
       console.warn('Hand tracking failed, falling back to mouse:', err);
-      if (onError) onError();
+      if (onError) onError(err?.message || String(err));
     }
   }, [cursorRef, handleGaze]);
 

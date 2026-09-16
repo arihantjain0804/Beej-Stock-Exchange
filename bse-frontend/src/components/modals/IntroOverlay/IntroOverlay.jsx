@@ -25,11 +25,15 @@ export default function IntroOverlay({ startHandTracking }) {
         setEntered(true);
         showToast('Hand Tracking Active', 'Move to look · Fist to click · Hold edge to scroll');
       },
-      // onError — fall back to mouse
-      () => {
+      // onError — fall back to mouse, but now say why instead of silently
+      // pretending nothing happened. This is the gap that made the last
+      // failure invisible: it looked identical to clicking "Enter with
+      // Mouse" because there was no on-screen sign anything had failed.
+      (errMessage) => {
         setHandBtnText('USE HAND TRACKING');
         setHandBtnDisabled(false);
         setEntered(true);
+        showToast('Hand Tracking Unavailable', errMessage || 'Falling back to mouse. Check browser console for details.');
       }
     );
   };
